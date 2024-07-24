@@ -9,8 +9,8 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-100">
       <DndProvider backend={HTML5Backend}>
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl text-black font-bold mb-6">
+        <div className="mx-auto px-4 py-8">
+          <h1 className="text-3xl text-center text-black font-bold mb-6">
             Website Builder
           </h1>
           <Builder />

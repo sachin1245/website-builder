@@ -8,9 +8,9 @@ export const createNewElement = (
     id: uuidv4(),
     type,
     style: {
-      position: "absolute",
+      // position: "absolute",
       left: Math.floor(Math.random() * 400),
-      top: Math.floor(Math.random() * 400),
+      top: Math.floor(Math.random() * 200),
       zIndex: 1,
     },
   };
@@ -19,7 +19,7 @@ export const createNewElement = (
     case "text":
       return {
         ...baseElement,
-        content: "",
+        content: "Add Text",
         ...props,
       };
     case "image":

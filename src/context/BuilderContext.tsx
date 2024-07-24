@@ -1,26 +1,26 @@
 "use client";
-import React, { createContext, useContext, useState } from "react";
-import { Element } from "@/types/Element";
-
-interface Page {
-  id: string;
-  name: string;
-  elements: Element[];
-}
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { Element, Page, Section } from "@/types/Element";
+import { v4 as uuidv4 } from "uuid";
 
 interface BuilderContextType {
   pages: Page[];
-  currentPage: string;
-  elements: Element[];
-  selectedElement: Element | null;
-  theme: string;
-  addElement: (element: Element) => void;
-  updateElement: (updatedElement: Element) => void;
-  moveElement: (id: string, position: { left: number; top: number }) => void;
-  deleteElement: (id: string) => void;
+  currentPageId: string;
+  addPage: (name: string) => void;
   setCurrentPage: (pageId: string) => void;
-  setSelectedElement: (element: Element | null) => void;
-  setTheme: (theme: string) => void;
+  updatePages: (pages: Page[]) => void;
+  addSection: (pageId: string) => void;
+  addElement: (sectionId: string, element: Element) => void;
+  updateElement: (sectionId: string, updatedElement: Element) => void;
+  moveElement: (
+    sectionId: string,
+    elementId: string,
+    position: { left: number; top: number }
+  ) => void;
+  deleteElement: (sectionId: string, elementId: string) => void;
+  saveTemplate: () => void;
+  loadTemplate: (templateId: string) => void;
+  getCurrentPageElements: () => Element[];
 }
 
 const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
@@ -28,35 +28,133 @@ const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
 export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [pages, setPages] = useState<Page[]>([
-    { id: "1", name: "Home", elements: [] },
-  ]);
-  const [currentPage, setCurrentPage] = useState("1");
-  const [selectedElement, setSelectedElement] = useState<Element | null>(null);
-  const [theme, setTheme] = useState("default");
+  const [pages, setPages] = useState<Page[]>([]);
+  const [currentPageId, setCurrentPageId] = useState("");
 
-  const elements =
-    pages.find((page) => page.id === currentPage)?.elements || [];
+  useEffect(() => {
+    const savedState = localStorage.getItem("builderState");
+    console.log(savedState);
+    if (savedState) {
+      const { pages, currentPageId } = JSON.parse(savedState);
+      setPages(pages);
+      setCurrentPageId(currentPageId);
+    } else {
+      // Initialize with a default page if no saved state
+      const defaultPage: Page = {
+        id: uuidv4(),
+        name: "Home",
+        slug: "home",
+        sections: [
+          {
+            id: uuidv4(),
+            elements: [],
+          },
+        ],
+      };
+      setPages([defaultPage]);
+      setCurrentPageId(defaultPage.id);
+    }
+  }, []);
 
-  const addElement = (element: Element) => {
-    setPages((prevPages) =>
-      prevPages.map((page) => {
-        console.log(page);
-        return page.id === currentPage
-          ? { ...page, elements: [...page.elements, element] }
-          : page;
-      })
+  useEffect(() => {
+    localStorage.setItem(
+      "builderState",
+      JSON.stringify({ pages, currentPageId })
+    );
+  }, [pages, currentPageId]);
+
+  const addPage = (name: string) => {
+    const slug = `${name.toLowerCase().replace(/\s+/g, "-")}-${uuidv4()}`;
+    const newPage: Page = {
+      id: uuidv4(),
+      name,
+      slug,
+      sections: [
+        {
+          id: uuidv4(),
+          elements: [],
+        },
+      ],
+    };
+    setPages([...pages, newPage]);
+    setCurrentPageId(newPage.id);
+  };
+
+  const setCurrentPage = (id: string) => {
+    setCurrentPageId(id);
+  };
+
+  const updatePages = (pages: Page[]) => {
+    setPages(pages);
+  };
+
+  const addSection = (pageId: string) => {
+    setPages(
+      pages.map((page) =>
+        page.id === pageId
+          ? {
+              ...page,
+              sections: [...page.sections, { id: uuidv4(), elements: [] }],
+            }
+          : page
+      )
     );
   };
 
-  const updateElement = (updatedElement: Element) => {
-    setPages((prevPages) =>
-      prevPages.map((page) =>
-        page.id === currentPage
+  const addElement = (sectionId: string, element: Element) => {
+    setPages(
+      pages.map((page) =>
+        page.id === currentPageId
           ? {
               ...page,
-              elements: page.elements.map((el) =>
-                el.id === updatedElement.id ? updatedElement : el
+              sections: page.sections.map((section) =>
+                section.id === sectionId
+                  ? { ...section, elements: [...section.elements, element] }
+                  : section
+              ),
+            }
+          : page
+      )
+    );
+  };
+
+  const updateElement = (sectionId: string, updatedElement: Element) => {
+    setPages(
+      pages.map((page) =>
+        page.id === currentPageId
+          ? {
+              ...page,
+              sections: page.sections.map((section) =>
+                section.id === sectionId
+                  ? {
+                      ...section,
+                      elements: section.elements.map((el) =>
+                        el.id === updatedElement.id ? updatedElement : el
+                      ),
+                    }
+                  : section
+              ),
+            }
+          : page
+      )
+    );
+  };
+
+  const deleteElement = (sectionId: string, elementId: string) => {
+    setPages(
+      pages.map((page) =>
+        page.id === currentPageId
+          ? {
+              ...page,
+              sections: page.sections.map((section) =>
+                section.id === sectionId
+                  ? {
+                      ...section,
+                      elements: section.elements.filter(
+                        (el) => el.id !== elementId
+                      ),
+                    }
+                  : section
               ),
             }
           : page
@@ -65,25 +163,33 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const moveElement = (
-    id: string,
+    sectionId: string,
+    elementId: string,
     newPosition: { left: number; top: number }
   ) => {
-    setPages((prevPages) =>
-      prevPages.map((page) =>
-        page.id === currentPage
+    setPages(
+      pages.map((page) =>
+        page.id === currentPageId
           ? {
               ...page,
-              elements: page.elements.map((el) =>
-                el.id === id
+              sections: page.sections.map((section) =>
+                section.id === sectionId
                   ? {
-                      ...el,
-                      style: {
-                        ...el.style,
-                        left: newPosition.left,
-                        top: newPosition.top,
-                      },
+                      ...section,
+                      elements: section.elements.map((el) =>
+                        el.id === elementId
+                          ? {
+                              ...el,
+                              style: {
+                                ...el.style,
+                                left: newPosition.left,
+                                top: newPosition.top,
+                              },
+                            }
+                          : el
+                      ),
                     }
-                  : el
+                  : section
               ),
             }
           : page
@@ -91,31 +197,50 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
-  const deleteElement = (id: string) => {
-    setPages((prevPages) =>
-      prevPages.map((page) =>
-        page.id === currentPage
-          ? { ...page, elements: page.elements.filter((el) => el.id !== id) }
-          : page
-      )
+  const saveTemplate = () => {
+    const templates = JSON.parse(localStorage.getItem("templates") || "[]");
+    const newTemplate = {
+      id: uuidv4(),
+      pages: pages,
+    };
+    localStorage.setItem(
+      "templates",
+      JSON.stringify([...templates, newTemplate])
     );
+  };
+
+  const loadTemplate = (templateId: string) => {
+    const templates = JSON.parse(localStorage.getItem("templates") || "[]");
+    const template = templates.find((t: any) => t.id === templateId);
+    if (template) {
+      setPages(template.pages);
+      setCurrentPageId(template.pages[0].id);
+    }
+  };
+
+  const getCurrentPageElements = () => {
+    const currentPage = pages.find((page) => page.id === currentPageId);
+    return currentPage
+      ? currentPage.sections.flatMap((section) => section.elements)
+      : [];
   };
 
   return (
     <BuilderContext.Provider
       value={{
         pages,
-        currentPage,
-        elements,
-        selectedElement,
-        theme,
+        currentPageId,
+        addPage,
+        setCurrentPage,
+        updatePages,
+        addSection,
         addElement,
         updateElement,
         moveElement,
         deleteElement,
-        setCurrentPage,
-        setSelectedElement,
-        setTheme,
+        saveTemplate,
+        loadTemplate,
+        getCurrentPageElements,
       }}
     >
       {children}

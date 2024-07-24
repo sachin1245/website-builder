@@ -1,20 +1,27 @@
 import React, { useRef, useCallback } from "react";
 import { useDrop } from "react-dnd";
 import { useBuilderContext } from "@/context/BuilderContext";
-import { TextBlock } from "../Elements/TextElement";
+import { TextElement } from "../Elements/TextElement";
 import { ImageElement } from "../Elements/ImageElement";
 import { VideoElement } from "../Elements/VideoElement";
 import { ButtonElement } from "../Elements/ButtonElement";
 import { Element } from "@/types/Element";
 
-export const DragDropArea: React.FC = () => {
-  const { elements, moveElement } = useBuilderContext();
+interface DragDropAreaProps {
+  sectionId: string;
+  elements: Element[];
+}
+
+export const DragDropArea: React.FC<DragDropAreaProps> = ({
+  sectionId,
+  elements,
+}) => {
+  const { moveElement } = useBuilderContext();
   const dropRef = useRef<HTMLDivElement>(null);
 
   const handleDrop = useCallback(
     (id: string, delta: { x: number; y: number }) => {
-      const element = elements.find((el) => el.id === id) as Element;
-
+      const element = elements.find((el) => el.id === id);
       if (element) {
         const parseValue = (value: string | number | undefined): number => {
           if (typeof value === "string") {
@@ -27,10 +34,10 @@ export const DragDropArea: React.FC = () => {
           (parseValue(element.style.left) || 0) + delta.x
         );
         const top = Math.round((parseValue(element.style.top) || 0) + delta.y);
-        moveElement(id, { left, top });
+        moveElement(sectionId, id, { left, top });
       }
     },
-    [elements, moveElement]
+    [elements, moveElement, sectionId]
   );
 
   const [, drop] = useDrop(
@@ -48,26 +55,43 @@ export const DragDropArea: React.FC = () => {
 
   drop(dropRef);
 
-  const renderElement = (element: any) => {
-    const props = {
-      ...element,
-      style: {
-        ...element.style,
-        position: "absolute",
-        left: element.style.left || 0,
-        top: element.style.top || 0,
-      },
+  const renderElement = (element: Element) => {
+    const commonProps = {
+      id: element.id,
+      style: element.style,
+      sectionId: sectionId,
     };
 
     switch (element.type) {
       case "text":
-        return <TextBlock key={element.id} {...props} />;
+        return (
+          <TextElement
+            key={element.id}
+            {...commonProps}
+            content={element.content}
+          />
+        );
       case "image":
-        return <ImageElement key={element.id} {...props} />;
+        return (
+          <ImageElement
+            key={element.id}
+            {...commonProps}
+            src={element.src}
+            alt={element.alt}
+          />
+        );
       case "video":
-        return <VideoElement key={element.id} {...props} />;
+        return (
+          <VideoElement key={element.id} {...commonProps} src={element.src} />
+        );
       case "button":
-        return <ButtonElement key={element.id} {...props} />;
+        return (
+          <ButtonElement
+            key={element.id}
+            {...commonProps}
+            content={element.content}
+          />
+        );
       default:
         return null;
     }
@@ -76,9 +100,13 @@ export const DragDropArea: React.FC = () => {
   return (
     <div
       ref={dropRef}
-      className="w-full h-auto min-h-[600px] bg-gray-100 relative border border-gray-300 overflow-hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4"
+      className="relative h-auto min-h-[500px] bg-gray-100 relative border border-gray-300 overflow-y-auto p-4"
+      style={{ minHeight: "600px" }}
     >
-      {elements.map(renderElement)}
+      {/* {elements.map(renderElement)} */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {elements.map(renderElement)}
+      </div>
     </div>
   );
 };

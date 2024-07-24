@@ -14,7 +14,7 @@ export const StyleEditor: React.FC<StyleEditorProps> = ({
   };
 
   return (
-    <div className="style-editor p-2 bg-gray-100 rounded">
+    <div className="style-editor text-black p-2 bg-white-300 rounded">
       <h3 className="font-bold mb-2">Style Properties</h3>
       <div className="grid grid-cols-2 gap-2 z-10 max-h-[200px] min-w-[200px] overflow-y-auto">
         <div>
