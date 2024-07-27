@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { addOrUpdatePage, removePage } from "@/utils/pageUtils";
 import { Element, Page, Section } from "@/types/Element";
 import { v4 as uuidv4 } from "uuid";
 
@@ -21,6 +22,10 @@ interface BuilderContextType {
   saveTemplate: () => void;
   loadTemplate: (templateId: string) => void;
   getCurrentPageElements: () => Element[];
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
@@ -30,14 +35,19 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [pages, setPages] = useState<Page[]>([]);
   const [currentPageId, setCurrentPageId] = useState("");
+  const [history, setHistory] = useState<Page[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   useEffect(() => {
     const savedState = localStorage.getItem("builderState");
     console.log(savedState);
     if (savedState) {
       const { pages, currentPageId } = JSON.parse(savedState);
+      const slug = pages.find((page: Page) => page.id === currentPageId)?.slug;
       setPages(pages);
       setCurrentPageId(currentPageId);
+      setHistory([pages]);
+      setHistoryIndex(0);
     } else {
       // Initialize with a default page if no saved state
       const defaultPage: Page = {
@@ -53,6 +63,8 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
       };
       setPages([defaultPage]);
       setCurrentPageId(defaultPage.id);
+      setHistory([[defaultPage]]);
+      setHistoryIndex(0);
     }
   }, []);
 
@@ -62,6 +74,30 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
       JSON.stringify({ pages, currentPageId })
     );
   }, [pages, currentPageId]);
+
+  const addToHistory = (newPages: Page[]) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newPages);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      setPages(history[historyIndex - 1]);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setPages(history[historyIndex + 1]);
+    }
+  };
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
 
   const addPage = (name: string) => {
     const slug = `${name.toLowerCase().replace(/\s+/g, "-")}-${uuidv4()}`;
@@ -76,8 +112,13 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       ],
     };
-    setPages([...pages, newPage]);
+
+    addOrUpdatePage(slug);
+
+    const newPages = [...pages, newPage];
+    setPages(newPages);
     setCurrentPageId(newPage.id);
+    addToHistory(newPages);
   };
 
   const setCurrentPage = (id: string) => {
@@ -86,80 +127,81 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updatePages = (pages: Page[]) => {
     setPages(pages);
+    addToHistory(pages);
   };
 
   const addSection = (pageId: string) => {
-    setPages(
-      pages.map((page) =>
-        page.id === pageId
-          ? {
-              ...page,
-              sections: [...page.sections, { id: uuidv4(), elements: [] }],
-            }
-          : page
-      )
+    const newPages = pages.map((page) =>
+      page.id === pageId
+        ? {
+            ...page,
+            sections: [...page.sections, { id: uuidv4(), elements: [] }],
+          }
+        : page
     );
+    setPages(newPages);
+    addToHistory(newPages);
   };
 
   const addElement = (sectionId: string, element: Element) => {
-    setPages(
-      pages.map((page) =>
-        page.id === currentPageId
-          ? {
-              ...page,
-              sections: page.sections.map((section) =>
-                section.id === sectionId
-                  ? { ...section, elements: [...section.elements, element] }
-                  : section
-              ),
-            }
-          : page
-      )
+    const newPages = pages.map((page) =>
+      page.id === currentPageId
+        ? {
+            ...page,
+            sections: page.sections.map((section) =>
+              section.id === sectionId
+                ? { ...section, elements: [...section.elements, element] }
+                : section
+            ),
+          }
+        : page
     );
+    setPages(newPages);
+    addToHistory(newPages);
   };
 
   const updateElement = (sectionId: string, updatedElement: Element) => {
-    setPages(
-      pages.map((page) =>
-        page.id === currentPageId
-          ? {
-              ...page,
-              sections: page.sections.map((section) =>
-                section.id === sectionId
-                  ? {
-                      ...section,
-                      elements: section.elements.map((el) =>
-                        el.id === updatedElement.id ? updatedElement : el
-                      ),
-                    }
-                  : section
-              ),
-            }
-          : page
-      )
+    const newPages = pages.map((page) =>
+      page.id === currentPageId
+        ? {
+            ...page,
+            sections: page.sections.map((section) =>
+              section.id === sectionId
+                ? {
+                    ...section,
+                    elements: section.elements.map((el) =>
+                      el.id === updatedElement.id ? updatedElement : el
+                    ),
+                  }
+                : section
+            ),
+          }
+        : page
     );
+    setPages(newPages);
+    addToHistory(newPages);
   };
 
   const deleteElement = (sectionId: string, elementId: string) => {
-    setPages(
-      pages.map((page) =>
-        page.id === currentPageId
-          ? {
-              ...page,
-              sections: page.sections.map((section) =>
-                section.id === sectionId
-                  ? {
-                      ...section,
-                      elements: section.elements.filter(
-                        (el) => el.id !== elementId
-                      ),
-                    }
-                  : section
-              ),
-            }
-          : page
-      )
+    const newPages = pages.map((page) =>
+      page.id === currentPageId
+        ? {
+            ...page,
+            sections: page.sections.map((section) =>
+              section.id === sectionId
+                ? {
+                    ...section,
+                    elements: section.elements.filter(
+                      (el) => el.id !== elementId
+                    ),
+                  }
+                : section
+            ),
+          }
+        : page
     );
+    setPages(newPages);
+    addToHistory(newPages);
   };
 
   const moveElement = (
@@ -167,34 +209,34 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     elementId: string,
     newPosition: { left: number; top: number }
   ) => {
-    setPages(
-      pages.map((page) =>
-        page.id === currentPageId
-          ? {
-              ...page,
-              sections: page.sections.map((section) =>
-                section.id === sectionId
-                  ? {
-                      ...section,
-                      elements: section.elements.map((el) =>
-                        el.id === elementId
-                          ? {
-                              ...el,
-                              style: {
-                                ...el.style,
-                                left: newPosition.left,
-                                top: newPosition.top,
-                              },
-                            }
-                          : el
-                      ),
-                    }
-                  : section
-              ),
-            }
-          : page
-      )
+    const newPages = pages.map((page) =>
+      page.id === currentPageId
+        ? {
+            ...page,
+            sections: page.sections.map((section) =>
+              section.id === sectionId
+                ? {
+                    ...section,
+                    elements: section.elements.map((el) =>
+                      el.id === elementId
+                        ? {
+                            ...el,
+                            style: {
+                              ...el.style,
+                              left: newPosition.left,
+                              top: newPosition.top,
+                            },
+                          }
+                        : el
+                    ),
+                  }
+                : section
+            ),
+          }
+        : page
     );
+    setPages(newPages);
+    addToHistory(newPages);
   };
 
   const saveTemplate = () => {
@@ -241,6 +283,10 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
         saveTemplate,
         loadTemplate,
         getCurrentPageElements,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
       }}
     >
       {children}

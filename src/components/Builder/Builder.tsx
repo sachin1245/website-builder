@@ -17,6 +17,10 @@ export const Builder: React.FC = () => {
     updatePages,
     addSection,
     saveTemplate,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useBuilderContext();
   // const router = useRouter();
   const [editingPageName, setEditingPageName] = useState(false);
@@ -26,9 +30,9 @@ export const Builder: React.FC = () => {
   const handlePageNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (currentPage) {
       const name = e.target.value;
-      const slug = `${name.toLowerCase().replace(/\s+/g, "-")}-${uuidv4()}`;
+      // const slug = `${name.toLowerCase().replace(/\s+/g, "-")}-${uuidv4()}`;
       const updatedPages = pages.map((page) =>
-        page.id === currentPage.id ? { ...page, name: name, slug: slug } : page
+        page.id === currentPage.id ? { ...page, name: name } : page
       );
       updatePages(updatedPages);
     }
@@ -72,6 +76,26 @@ export const Builder: React.FC = () => {
           Load Template
         </Link>
         {currentPage && <PreviewButton slug={currentPage.slug} />}
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={undo}
+            disabled={!canUndo}
+            className={`w-1/2 px-4 py-2 ${
+              canUndo ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-300"
+            } text-white rounded transition-colors`}
+          >
+            Undo
+          </button>
+          <button
+            onClick={redo}
+            disabled={!canRedo}
+            className={`w-1/2 px-4 py-2 ${
+              canRedo ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-300"
+            } text-white rounded transition-colors`}
+          >
+            Redo
+          </button>
+        </div>
       </div>
       <div className="main-content flex-grow p-4 overflow-y-auto">
         {currentPage ? (
