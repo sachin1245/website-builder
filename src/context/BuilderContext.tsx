@@ -209,34 +209,34 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     elementId: string,
     newPosition: { left: number; top: number }
   ) => {
-    const newPages = pages.map((page) =>
-      page.id === currentPageId
-        ? {
-            ...page,
-            sections: page.sections.map((section) =>
-              section.id === sectionId
-                ? {
-                    ...section,
-                    elements: section.elements.map((el) =>
-                      el.id === elementId
-                        ? {
-                            ...el,
-                            style: {
-                              ...el.style,
-                              left: newPosition.left,
-                              top: newPosition.top,
-                            },
-                          }
-                        : el
-                    ),
-                  }
-                : section
-            ),
-          }
-        : page
+    setPages(
+      pages.map((page) =>
+        page.id === currentPageId
+          ? {
+              ...page,
+              sections: page.sections.map((section) =>
+                section.id === sectionId
+                  ? {
+                      ...section,
+                      elements: section.elements.map((el) =>
+                        el.id === elementId
+                          ? {
+                              ...el,
+                              style: {
+                                ...el.style,
+                                left: `${newPosition.left.toFixed(2)}%`,
+                                top: `${newPosition.top.toFixed(2)}%`,
+                              },
+                            }
+                          : el
+                      ),
+                    }
+                  : section
+              ),
+            }
+          : page
+      )
     );
-    setPages(newPages);
-    addToHistory(newPages);
   };
 
   const saveTemplate = () => {

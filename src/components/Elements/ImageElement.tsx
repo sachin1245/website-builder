@@ -39,10 +39,8 @@ export const ImageElement: React.FC<ImageElementProps> = ({
     });
   };
 
-  const handleResize = (width: number, height: number) => {
-    handleUpdate({
-      style: { ...style, width: `${width}px`, height: `${height}px` },
-    });
+  const handleResize = (newStyle: React.CSSProperties) => {
+    updateElement(sectionId, { id, type: "image", src, alt, style: newStyle });
   };
 
   return (
@@ -89,6 +87,12 @@ export const ImageElement: React.FC<ImageElementProps> = ({
             src={src}
             alt={alt}
             className="h-auto w-full"
+            style={{
+              ...style,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
             onDoubleClick={() => setIsEditing(true)}
           />
         )}

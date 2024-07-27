@@ -22,19 +22,31 @@ export const DragDropArea: React.FC<DragDropAreaProps> = ({
   const handleDrop = useCallback(
     (id: string, delta: { x: number; y: number }) => {
       const element = elements.find((el) => el.id === id);
-      if (element) {
-        const parseValue = (value: string | number | undefined): number => {
+      if (element && dropRef.current) {
+        const containerRect = dropRef.current.getBoundingClientRect();
+        const parsePercentage = (
+          value: string | number | undefined
+        ): number => {
           if (typeof value === "string") {
             return parseFloat(value) || 0;
           }
           return value || 0;
         };
 
-        const left = Math.round(
-          (parseValue(element.style.left) || 0) + delta.x
-        );
-        const top = Math.round((parseValue(element.style.top) || 0) + delta.y);
-        moveElement(sectionId, id, { left, top });
+        const left = parsePercentage(element.style.left);
+        const top = parsePercentage(element.style.top);
+        const width = parsePercentage(element.style.width);
+        const height = parsePercentage(element.style.height);
+
+        // Calculate new position in percentages
+        const newLeft = left + (delta.x / containerRect.width) * 100;
+        const newTop = top + (delta.y / containerRect.height) * 100;
+
+        // Ensure the element stays within the container bounds
+        const clampedLeft = Math.max(0, Math.min(100 - width, newLeft));
+        const clampedTop = Math.max(0, Math.min(100 - height, newTop));
+
+        moveElement(sectionId, id, { left: clampedLeft, top: clampedTop });
       }
     },
     [elements, moveElement, sectionId]
@@ -100,7 +112,7 @@ export const DragDropArea: React.FC<DragDropAreaProps> = ({
   return (
     <div
       ref={dropRef}
-      className="relative h-auto min-h-[500px] bg-gray-100 relative border border-gray-300 overflow-y-auto p-4"
+      className="relative drag-drop-area h-auto min-h-[500px] bg-gray-100 relative border border-gray-300 overflow-y-auto p-4"
       style={{ minHeight: "600px" }}
     >
       {/* {elements.map(renderElement)} */}

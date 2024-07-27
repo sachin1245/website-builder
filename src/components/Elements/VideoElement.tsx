@@ -30,10 +30,8 @@ export const VideoElement: React.FC<VideoElementProps> = ({
     updateElement(sectionId, { id, type: "video", src, style, ...updates });
   };
 
-  const handleResize = (width: number, height: number) => {
-    handleUpdate({
-      style: { ...style, width: `${width}px`, height: `${height}px` },
-    });
+  const handleResize = (newStyle: React.CSSProperties) => {
+    updateElement(sectionId, { id, type: "video", src, style: newStyle });
   };
 
   return (

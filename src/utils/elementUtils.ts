@@ -8,9 +8,8 @@ export const createNewElement = (
     id: uuidv4(),
     type,
     style: {
-      // position: "absolute",
-      left: Math.floor(Math.random() * 400),
-      top: Math.floor(Math.random() * 200),
+      left: `${Math.floor(Math.random() * 80)}%`,
+      top: `${Math.floor(Math.random() * 80)}%`,
       zIndex: 1,
     },
   };
@@ -20,6 +19,11 @@ export const createNewElement = (
       return {
         ...baseElement,
         content: "Add Text",
+        style: {
+          ...baseElement.style,
+          width: "20%",
+          height: "8%",
+        },
         ...props,
       };
     case "image":
@@ -27,18 +31,33 @@ export const createNewElement = (
         ...baseElement,
         src: "https://via.placeholder.com/150",
         alt: "Placeholder image",
+        style: {
+          ...baseElement.style,
+          width: "30%",
+          height: "30%",
+        },
         ...props,
       };
     case "video":
       return {
         ...baseElement,
         src: "https://example.com/placeholder-video.mp4",
+        style: {
+          ...baseElement.style,
+          width: "40%",
+          height: "30%",
+        },
         ...props,
       };
     case "button":
       return {
         ...baseElement,
         content: "Click me",
+        style: {
+          ...baseElement.style,
+          width: "15%",
+          height: "8%",
+        },
         ...props,
       };
     default:

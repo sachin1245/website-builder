@@ -33,8 +33,7 @@ export const TextElement: React.FC<TextElementProps> = ({
     <div
       ref={elementRef}
       style={{
-        top: style.top,
-        left: style.left,
+        ...style,
         opacity: isDragging ? 0.5 : 1,
         cursor: "move",
       }}

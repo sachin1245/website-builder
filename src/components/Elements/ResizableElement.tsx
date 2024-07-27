@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 interface ResizableElementProps {
   children: React.ReactNode;
   style: React.CSSProperties;
-  onResize: (width: number, height: number) => void;
+  onResize: (newStyle: React.CSSProperties) => void;
 }
 
 export const ResizableElement: React.FC<ResizableElementProps> = ({
@@ -13,44 +13,59 @@ export const ResizableElement: React.FC<ResizableElementProps> = ({
 }) => {
   const [isResizing, setIsResizing] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
+  const startPosRef = useRef({ x: 0, y: 0 });
+  const startSizeRef = useRef({ width: 0, height: 0 });
 
   const startResize = (e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsResizing(true);
+    startPosRef.current = { x: e.clientX, y: e.clientY };
+    if (elementRef.current) {
+      const rect = elementRef.current.getBoundingClientRect();
+      startSizeRef.current = { width: rect.width, height: rect.height };
+    }
   };
 
   useEffect(() => {
+    if (!isResizing) return;
+
     const handleResize = (e: MouseEvent) => {
-      if (!isResizing || !elementRef.current) return;
+      if (!elementRef.current) return;
+      const container = elementRef.current.closest(
+        ".drag-drop-area"
+      ) as HTMLElement;
+      if (!container) return;
 
-      const element = elementRef.current;
-      const newWidth = Math.max(
-        50,
-        e.clientX - element.getBoundingClientRect().left
-      );
-      const newHeight = Math.max(
-        50,
-        e.clientY - element.getBoundingClientRect().top
-      );
+      const deltaX = e.clientX - startPosRef.current.x;
+      const deltaY = e.clientY - startPosRef.current.y;
 
-      onResize(newWidth, newHeight);
+      const newWidth = startSizeRef.current.width + deltaX;
+      const newHeight = startSizeRef.current.height + deltaY;
+
+      const newWidthPercent = (newWidth / container.clientWidth) * 100;
+      const newHeightPercent = (newHeight / container.clientHeight) * 100;
+
+      const newStyle = {
+        ...style,
+        width: `${Math.max(5, Math.min(100, newWidthPercent))}%`,
+        height: `${Math.max(5, Math.min(100, newHeightPercent))}%`,
+      };
+
+      onResize(newStyle);
     };
 
     const stopResize = () => {
       setIsResizing(false);
     };
 
-    if (isResizing) {
-      window.addEventListener("mousemove", handleResize);
-      window.addEventListener("mouseup", stopResize);
-    }
+    document.addEventListener("mousemove", handleResize);
+    document.addEventListener("mouseup", stopResize);
 
     return () => {
-      window.removeEventListener("mousemove", handleResize);
-      window.removeEventListener("mouseup", stopResize);
+      document.removeEventListener("mousemove", handleResize);
+      document.removeEventListener("mouseup", stopResize);
     };
-  }, [isResizing, onResize]);
+  }, [isResizing, style, onResize]);
 
   return (
     <div
@@ -59,20 +74,18 @@ export const ResizableElement: React.FC<ResizableElementProps> = ({
         ...style,
         position: "absolute",
         boxSizing: "border-box",
-        border: "1px solid #ccc",
       }}
     >
       {children}
       <div
         style={{
           position: "absolute",
-          right: "0",
-          bottom: "0",
+          right: 0,
+          bottom: 0,
           width: "10px",
           height: "10px",
           background: "#4299e1",
           cursor: "se-resize",
-          zIndex: 1000,
         }}
         onMouseDown={startResize}
       />

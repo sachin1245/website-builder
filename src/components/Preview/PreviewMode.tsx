@@ -13,11 +13,12 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
   const [deviceType, setDeviceType] = useState<"mobile" | "tablet" | "desktop">(
     "desktop"
   );
-  const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const currentPage = pages.find((page) => page.slug === slug);
 
+  // Update container size on mount and on window resize
   useEffect(() => {
     const updateContainerSize = () => {
       if (containerRef.current) {
@@ -34,46 +35,94 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
 
   if (!currentPage) return <div>Page not found</div>;
 
-  const generateResponsiveStyles = (element: Element) => {
-    const { width } = containerSize;
-    const elementWidth = parseFloat(element.style.width as string) || 0;
-    const elementLeft = parseFloat(element.style.left as string) || 0;
-
-    // Adjust positions for mobile view
-    if (
-      (deviceType === "mobile" && elementLeft + elementWidth > width) ||
-      (deviceType === "tablet" && elementLeft + elementWidth > 768)
-    ) {
-      return {
-        position: "absolute",
-        top: `${
-          parseFloat(element.style.top as string) +
-          parseFloat(element.style.height as string) +
-          10
-        }px`,
-        left: "10px",
-        width: `${elementWidth}px`,
-        height: element.style.height,
-        ...element.style,
-      };
-    }
-    return {
-      position: "absolute",
-      top: element.style.top,
-      left: element.style.left,
-      width: element.style.width,
-      height: element.style.height,
-      ...element.style,
-    };
+  // Extract unique positions from the element styles for columns and rows
+  const extractUniquePositions = (
+    elements: Element[],
+    dimension: "left" | "top" | "width" | "height"
+  ) => {
+    const positions = new Set<number>();
+    elements.forEach((element) => {
+      const start = parseFloat(element.style[dimension] as string);
+      const size = parseFloat(
+        element.style[dimension === "left" ? "width" : "height"] as string
+      );
+      positions.add(start);
+      if (dimension === "left" || dimension === "top") {
+        positions.add(start + size);
+      }
+    });
+    return Array.from(positions).sort((a, b) => a - b);
   };
 
+  // Generate template values by calculating differences between consecutive positions
+  const generateTemplateValues = (positions: number[]) => {
+    const values = [];
+    for (let i = 1; i < positions.length; i++) {
+      values.push(positions[i] - positions[i - 1]);
+    }
+    return values;
+  };
+
+  // Normalize template values so they add up to 100%
+  const normalizeValues = (values: number[]) => {
+    const sum = values.reduce((acc, val) => acc + val, 0);
+    return values.map((val) => (val / sum) * 100);
+  };
+
+  // Extract and normalize column positions
+  const columns = extractUniquePositions(
+    currentPage.sections.flatMap((section) => section.elements),
+    "left"
+  );
+  const columnTemplate = normalizeValues(generateTemplateValues(columns))
+    .map((val) => `${val}%`)
+    .join(" ");
+
+  // Extract and normalize row positions
+  const rows = extractUniquePositions(
+    currentPage.sections.flatMap((section) => section.elements),
+    "top"
+  );
+  const rowTemplate = normalizeValues(generateTemplateValues(rows))
+    .map((val) => `${val}%`)
+    .join(" ");
+
+  // Calculate grid area for each element
+  const calculateGridArea = (element: Element) => {
+    const left = parseFloat(element.style.left as string);
+    const top = parseFloat(element.style.top as string);
+    const width = parseFloat(element.style.width as string);
+    const height = parseFloat(element.style.height as string);
+
+    const columnStart = columns.indexOf(left) + 1;
+    const columnEnd = columns.indexOf(left + width) + 1;
+    const rowStart = rows.indexOf(top) + 1;
+    const rowEnd = rows.indexOf(top + height) + 1;
+
+    return `${rowStart} / ${columnStart} / ${rowEnd} / ${columnEnd}`;
+  };
+
+  // Render each element based on its type
   const renderElement = (element: Element) => {
-    const styles = generateResponsiveStyles(element);
+    const gridArea = calculateGridArea(element);
+
+    const styles = {
+      ...element.style,
+      gridArea,
+      position: "relative" as const,
+      left: undefined,
+      top: undefined,
+      width: "100%",
+      height: "100%",
+      maxWidth: "100%",
+      maxHeight: "100%",
+      overflow: "hidden",
+    };
 
     switch (element.type) {
       case "text":
         return (
-          <p key={element.id} className="element" style={styles}>
+          <p key={element.id} className="preview-element" style={styles}>
             {element.content}
           </p>
         );
@@ -83,7 +132,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
             key={element.id}
             src={element.src}
             alt={element.alt}
-            className="element"
+            className="preview-element"
             style={styles}
           />
         );
@@ -93,13 +142,13 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
             key={element.id}
             src={element.src}
             controls
-            className="element"
+            className="preview-element"
             style={styles}
           />
         );
       case "button":
         return (
-          <button key={element.id} className="element" style={styles}>
+          <button key={element.id} className="preview-element" style={styles}>
             {element.content}
           </button>
         );
@@ -108,12 +157,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     }
   };
 
-  const renderSection = (section: Section) => (
-    <div key={section.id} className="preview-section">
-      {section.elements.map(renderElement)}
-    </div>
-  );
-
+  // Define container styles based on device type
   const containerStyle = {
     width:
       deviceType === "mobile"
@@ -121,14 +165,17 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
         : deviceType === "tablet"
         ? "768px"
         : "100%",
+    height: deviceType === "desktop" ? "100%" : "auto",
     margin: deviceType !== "desktop" ? "0 auto" : "0",
+    overflow: "auto",
+    border: deviceType !== "desktop" ? "1px solid #ccc" : "none",
   };
 
   return (
     <div className="preview-mode">
       <div className="bg-gray-100 p-4 shadow-md sticky top-0 z-10">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-2xl font-bold">{currentPage.name}</h1>
+          <h1 className="text-2xl text-black font-bold">{currentPage.name}</h1>
           <div className="flex flex-wrap gap-2">
             {["mobile", "tablet", "desktop"].map((type) => (
               <button
@@ -159,7 +206,20 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
         className="preview-container"
         style={containerStyle}
       >
-        {currentPage.sections.map(renderSection)}
+        <div
+          className="preview-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: columnTemplate,
+            gridTemplateRows: rowTemplate,
+            gap: "0",
+            padding: "20px",
+          }}
+        >
+          {currentPage.sections.flatMap((section) =>
+            section.elements.map(renderElement)
+          )}
+        </div>
       </div>
     </div>
   );
