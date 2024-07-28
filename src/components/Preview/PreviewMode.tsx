@@ -41,26 +41,22 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     dimension: "left" | "top" | "width" | "height"
   ) => {
     const positions = new Set<number>();
+    positions.add(0); // Add 0 to account for the container's edge
     elements.forEach((element) => {
       const start = parseFloat(element.style[dimension] as string);
       const size = parseFloat(
         element.style[dimension === "left" ? "width" : "height"] as string
       );
       positions.add(start);
-      if (dimension === "left" || dimension === "top") {
-        positions.add(start + size);
-      }
+      positions.add(start + size);
     });
+    positions.add(100); // Add 100 to account for the container's edge
     return Array.from(positions).sort((a, b) => a - b);
   };
 
   // Generate template values by calculating differences between consecutive positions
   const generateTemplateValues = (positions: number[]) => {
-    const values = [];
-    for (let i = 1; i < positions.length; i++) {
-      values.push(positions[i] - positions[i - 1]);
-    }
-    return values;
+    return positions.slice(1).map((pos, index) => pos - positions[index]);
   };
 
   // Normalize template values so they add up to 100%
@@ -75,7 +71,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     "left"
   );
   const columnTemplate = normalizeValues(generateTemplateValues(columns))
-    .map((val) => `${val}%`)
+    .map((val) => `${val}fr`)
     .join(" ");
 
   // Extract and normalize row positions
@@ -84,7 +80,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     "top"
   );
   const rowTemplate = normalizeValues(generateTemplateValues(rows))
-    .map((val) => `${val}%`)
+    .map((val) => `${val}fr`)
     .join(" ");
 
   // Calculate grid area for each element
@@ -94,10 +90,10 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     const width = parseFloat(element.style.width as string);
     const height = parseFloat(element.style.height as string);
 
-    const columnStart = columns.indexOf(left) + 1;
-    const columnEnd = columns.indexOf(left + width) + 1;
-    const rowStart = rows.indexOf(top) + 1;
-    const rowEnd = rows.indexOf(top + height) + 1;
+    const columnStart = columns.findIndex((col) => col >= left) + 1;
+    const columnEnd = columns.findIndex((col) => col >= left + width) + 1;
+    const rowStart = rows.findIndex((row) => row >= top) + 1;
+    const rowEnd = rows.findIndex((row) => row >= top + height) + 1;
 
     return `${rowStart} / ${columnStart} / ${rowEnd} / ${columnEnd}`;
   };
@@ -214,6 +210,8 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
             gridTemplateRows: rowTemplate,
             gap: "0",
             padding: "20px",
+            height: "100%", // Ensure the grid takes full height
+            width: "100%", // Ensure the grid takes full width
           }}
         >
           {currentPage.sections.flatMap((section) =>
