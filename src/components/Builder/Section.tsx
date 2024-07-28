@@ -13,7 +13,14 @@ interface SectionProps {
 }
 
 export const Section: React.FC<SectionProps> = ({ pageId, section }) => {
-  const { addElement } = useBuilderContext();
+  const { addElement, currentTheme, globalStyles } = useBuilderContext();
+
+  // Merge current theme with global styles
+  const appliedTheme = {
+    ...currentTheme,
+    colors: { ...currentTheme.colors, ...globalStyles.colors },
+    fonts: { ...currentTheme.fonts, ...globalStyles.fonts },
+  };
 
   const handleAddElement = (type: "text" | "image" | "video" | "button") => {
     const newElement = createNewElement(type, section.id) as Element;
@@ -21,7 +28,12 @@ export const Section: React.FC<SectionProps> = ({ pageId, section }) => {
   };
 
   return (
-    <div className="section mb-4 p-4 border border-gray-300 rounded">
+    <div
+      className="section mb-6 p-4 rounded-lg shadow-sm"
+      style={{
+        color: appliedTheme.colors.text,
+      }}
+    >
       <div className="section-controls mb-2 flex flex-wrap gap-2">
         <button
           onClick={() => handleAddElement("text")}

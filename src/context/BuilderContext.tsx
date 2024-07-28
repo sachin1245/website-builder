@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { addOrUpdatePage, removePage } from "@/utils/pageUtils";
 import { Element, Page, Section } from "@/types/Element";
 import { v4 as uuidv4 } from "uuid";
+import { Theme, lightTheme, themes } from "../styles/themes";
 
 interface BuilderContextType {
   pages: Page[];
@@ -28,6 +29,10 @@ interface BuilderContextType {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  currentTheme: Theme;
+  setCurrentTheme: (theme: Theme) => void;
+  globalStyles: Partial<Theme>;
+  updateGlobalStyles: (styles: Partial<Theme>) => void;
 }
 
 const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
@@ -35,6 +40,13 @@ const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
 export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const [currentTheme, setCurrentTheme] = useState<Theme>(lightTheme);
+  const [globalStyles, setGlobalStyles] = useState<Partial<Theme>>({});
+
+  const updateGlobalStyles = (styles: Partial<Theme>) => {
+    setGlobalStyles({ ...globalStyles, ...styles });
+  };
+
   const [pages, setPages] = useState<Page[]>([]);
   const [currentPageId, setCurrentPageId] = useState("");
   const [history, setHistory] = useState<Page[][]>([]);
@@ -300,6 +312,10 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
         redo,
         canUndo,
         canRedo,
+        currentTheme,
+        setCurrentTheme,
+        globalStyles,
+        updateGlobalStyles,
       }}
     >
       {children}

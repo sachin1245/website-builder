@@ -15,7 +15,17 @@ export const TextElement: React.FC<TextElementProps> = ({
   style,
   sectionId,
 }) => {
-  const { deleteElement, setSelectedElement } = useBuilderContext();
+  const { deleteElement, setSelectedElement, currentTheme, globalStyles } =
+    useBuilderContext();
+
+  // Merge current theme with global styles and element-specific styles
+  const appliedStyle = {
+    ...currentTheme.colors,
+    ...globalStyles.colors,
+    ...style,
+    fontFamily:
+      style.fontFamily || globalStyles.fonts?.body || currentTheme.fonts.body,
+  };
 
   const [showDelete, setShowDelete] = useState(false);
 
@@ -37,15 +47,20 @@ export const TextElement: React.FC<TextElementProps> = ({
     >
       <p
         style={{
-          color: style.color || "black",
-          backgroundColor: style.backgroundColor,
-          fontSize: style.fontSize,
-          padding: style.padding || "5px",
-          fontWeight: style.fontWeight,
-          borderRadius: style.borderRadius,
+          ...appliedStyle,
+          width: "100%",
+          height: "100%",
+          opacity: isDragging ? 0.5 : 1,
+          cursor: "move",
         }}
         onClick={() =>
-          setSelectedElement({ id, content, style, sectionId, type: "text" })
+          setSelectedElement({
+            id,
+            content,
+            style: appliedStyle,
+            sectionId,
+            type: "text",
+          })
         }
       >
         {content}
@@ -54,7 +69,7 @@ export const TextElement: React.FC<TextElementProps> = ({
         <div className="absolute -top-8 right-2 flex gap-2">
           <button
             onClick={() => deleteElement(sectionId, id)}
-            className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
+            className="bg-red-500  p-3rounded hover:bg-red-600"
           >
             Delete
           </button>

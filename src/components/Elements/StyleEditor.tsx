@@ -16,11 +16,9 @@ export const StyleEditor: React.FC<StyleEditorProps> = ({
   return (
     <div className="style-editor text-black p-2 bg-white-300 rounded">
       <h3 className="font-bold mb-2">Style Properties</h3>
-      <div className="grid grid-cols-1 gap-2 z-10 max-h-[200px] min-w-[180px] overflow-y-auto">
+      <div className="grid grid-cols-1 gap-2 z-10  min-w-[160px] overflow-y-auto">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Color
-          </label>
+          <label className="block text-sm font-medium">Color</label>
           <input
             type="color"
             value={(style.color as string) || "#000000"}
@@ -29,9 +27,7 @@ export const StyleEditor: React.FC<StyleEditorProps> = ({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Background Color
-          </label>
+          <label className="block text-sm font-medium ">Background Color</label>
           <input
             type="color"
             value={(style.backgroundColor as string) || "#ffffff"}
@@ -40,9 +36,7 @@ export const StyleEditor: React.FC<StyleEditorProps> = ({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Font Size (px)
-          </label>
+          <label className="block text-sm font-medium">Font Size (px)</label>
           <input
             type="number"
             value={parseInt(style.fontSize as string) || 16}
@@ -51,9 +45,7 @@ export const StyleEditor: React.FC<StyleEditorProps> = ({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Font Weight
-          </label>
+          <label className="block text-sm font-medium ">Font Weight</label>
           <select
             value={(style.fontWeight as string) || "normal"}
             onChange={(e) => handleChange("fontWeight", e.target.value)}
@@ -65,7 +57,7 @@ export const StyleEditor: React.FC<StyleEditorProps> = ({
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium">
             Border Radius (px)
           </label>
           <input
@@ -78,9 +70,7 @@ export const StyleEditor: React.FC<StyleEditorProps> = ({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Padding (px)
-          </label>
+          <label className="block text-sm font-medium">Padding (px)</label>
           <input
             type="number"
             value={parseInt(style.padding as string) || 0}

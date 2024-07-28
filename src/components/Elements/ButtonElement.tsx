@@ -15,18 +15,28 @@ export const ButtonElement: React.FC<ButtonElementProps> = ({
   style,
   sectionId,
 }) => {
-  const { deleteElement, setSelectedElement } = useBuilderContext();
+  const { deleteElement, setSelectedElement, currentTheme, globalStyles } =
+    useBuilderContext();
   const [showDelete, setShowDelete] = useState(false);
 
   const { isDragging, drag } = useElementDrag("button", { id, type: "button" });
   const elementRef = useRef<HTMLDivElement>(null);
   drag(elementRef);
 
+  // Merge current theme with global styles and element-specific styles
+  const appliedStyle = {
+    ...currentTheme.colors,
+    ...globalStyles.colors,
+    ...style,
+    fontFamily:
+      style.fontFamily || globalStyles.fonts?.body || currentTheme.fonts.body,
+  };
+
   return (
     <div
       ref={elementRef}
       style={{
-        ...style,
+        ...appliedStyle,
         opacity: isDragging ? 0.5 : 1,
         cursor: "move",
       }}
@@ -36,19 +46,16 @@ export const ButtonElement: React.FC<ButtonElementProps> = ({
     >
       <button
         style={{
-          color: style.color,
-          backgroundColor: style.backgroundColor,
-          fontSize: style.fontSize,
-          padding: style.padding,
-          fontWeight: style.fontWeight,
-          borderRadius: style.borderRadius,
+          ...appliedStyle,
+          width: "100%",
+          height: "100%",
         }}
         className="w-full p-2 h-full bg-blue-500 text-white rounded hover:bg-blue-600"
         onClick={() =>
           setSelectedElement({
             id,
             content,
-            style,
+            style: appliedStyle,
             sectionId,
             type: "button",
           })

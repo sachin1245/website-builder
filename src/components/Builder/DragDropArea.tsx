@@ -112,7 +112,7 @@ export const DragDropArea: React.FC<DragDropAreaProps> = ({
   return (
     <div
       ref={dropRef}
-      className="relative drag-drop-area h-auto min-h-[500px] bg-gray-100 relative border border-gray-300 overflow-y-auto p-4"
+      className="relative drag-drop-area h-auto min-h-[400px] bg-gray-100 relative border border-gray-300 overflow-y-auto p-4"
       style={{ minHeight: "600px" }}
     >
       {/* {elements.map(renderElement)} */}
