@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 interface BuilderContextType {
   pages: Page[];
   currentPageId: string;
-  addPage: (name: string) => void;
+  addPage: (pageData: Partial<Page>) => Page;
   setCurrentPage: (pageId: string) => void;
   updatePages: (pages: Page[]) => void;
   addSection: (pageId: string) => void;
@@ -19,7 +19,7 @@ interface BuilderContextType {
     position: { left: number; top: number }
   ) => void;
   deleteElement: (sectionId: string, elementId: string) => void;
-  saveTemplate: () => void;
+  saveTemplate: (page: Page) => void;
   loadTemplate: (templateId: string) => void;
   getCurrentPageElements: () => Element[];
   undo: () => void;
@@ -40,10 +40,8 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const savedState = localStorage.getItem("builderState");
-    console.log(savedState);
     if (savedState) {
       const { pages, currentPageId } = JSON.parse(savedState);
-      const slug = pages.find((page: Page) => page.id === currentPageId)?.slug;
       setPages(pages);
       setCurrentPageId(currentPageId);
       setHistory([pages]);
@@ -68,6 +66,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  // Save state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem(
       "builderState",
@@ -99,13 +98,12 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
-  const addPage = (name: string) => {
-    const slug = `${name.toLowerCase().replace(/\s+/g, "-")}-${uuidv4()}`;
+  const addPage = (pageData: Partial<Page>) => {
     const newPage: Page = {
       id: uuidv4(),
-      name,
-      slug,
-      sections: [
+      name: pageData.name || "New Page",
+      slug: pageData.slug || `page-${Date.now()}`,
+      sections: pageData.sections || [
         {
           id: uuidv4(),
           elements: [],
@@ -113,12 +111,16 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
       ],
     };
 
+    const slug = `${newPage.name
+      .toLowerCase()
+      .replace(/\s+/g, "-")}-${uuidv4()}`;
     addOrUpdatePage(slug);
 
     const newPages = [...pages, newPage];
     setPages(newPages);
-    setCurrentPageId(newPage.id);
+    // setCurrentPageId(newPage.id);
     addToHistory(newPages);
+    return newPage;
   };
 
   const setCurrentPage = (id: string) => {
@@ -239,11 +241,11 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
-  const saveTemplate = () => {
+  const saveTemplate = (page: Page) => {
     const templates = JSON.parse(localStorage.getItem("templates") || "[]");
     const newTemplate = {
       id: uuidv4(),
-      pages: pages,
+      page: page,
     };
     localStorage.setItem(
       "templates",

@@ -6,6 +6,7 @@ import { NavigationBar } from "../Navigation/NavigationBar";
 import { useRouter } from "next/router";
 import { Section } from "./Section";
 import { PreviewButton } from "./PreviewButton";
+import { saveTemplate } from "@/utils/templateUtils";
 import Link from "next/link";
 
 export const Builder: React.FC = () => {
@@ -16,7 +17,6 @@ export const Builder: React.FC = () => {
     setCurrentPage,
     updatePages,
     addSection,
-    saveTemplate,
     undo,
     redo,
     canUndo,
@@ -27,14 +27,37 @@ export const Builder: React.FC = () => {
 
   const currentPage = pages.find((page) => page.id === currentPageId);
 
+  const handleAddPage = () => {
+    const newPageName = `New Page ${pages.length + 1}`;
+    const newPage = addPage({
+      name: newPageName,
+      slug: `page-${Date.now()}`,
+      sections: [
+        {
+          id: uuidv4(),
+          elements: [],
+        },
+      ],
+    });
+    setCurrentPage(newPage.id);
+  };
+
   const handlePageNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (currentPage) {
       const name = e.target.value;
-      // const slug = `${name.toLowerCase().replace(/\s+/g, "-")}-${uuidv4()}`;
       const updatedPages = pages.map((page) =>
         page.id === currentPage.id ? { ...page, name: name } : page
       );
       updatePages(updatedPages);
+    }
+  };
+
+  const handleSaveTemplate = () => {
+    if (currentPage) {
+      saveTemplate(currentPage);
+      alert("Template saved successfully!");
+    } else {
+      alert("No page selected to save as template.");
     }
   };
 
@@ -58,13 +81,13 @@ export const Builder: React.FC = () => {
           ))}
         </ul>
         <button
-          onClick={() => addPage("New Page")}
+          onClick={handleAddPage}
           className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         >
           Add New Page
         </button>
         <button
-          onClick={saveTemplate}
+          onClick={handleSaveTemplate}
           className="w-full px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors mt-2"
         >
           Save Template

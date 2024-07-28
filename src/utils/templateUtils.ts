@@ -1,18 +1,23 @@
-import fs from 'fs';
-import path from 'path';
+import { v4 as uuidv4 } from "uuid";
 
-export const loadTemplates = () => {
-  const templatesDir = path.join(process.cwd(), 'public', 'templates');
-  const templateFiles = fs.readdirSync(templatesDir);
-  
-  return templateFiles.map((file) => {
-    const content = fs.readFileSync(path.join(templatesDir, file), 'utf-8');
-    return JSON.parse(content);
-  });
+export const loadTemplates = (): any[] => {
+  if (typeof window !== "undefined") {
+    const templates = localStorage.getItem("templates");
+    return templates ? JSON.parse(templates) : [];
+  }
+  return [];
 };
 
-export const saveTemplate = (template: any) => {
-  const templatesDir = path.join(process.cwd(), 'public', 'templates');
-  const fileName = `template_${Date.now()}.json`;
-  fs.writeFileSync(path.join(templatesDir, fileName), JSON.stringify(template));
+export const saveTemplate = (page: any) => {
+  if (typeof window !== "undefined") {
+    const templates = loadTemplates();
+    const newTemplate = {
+      id: uuidv4(),
+      page: page,
+    };
+    localStorage.setItem(
+      "templates",
+      JSON.stringify([...templates, newTemplate])
+    );
+  }
 };
