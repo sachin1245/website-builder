@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBuilderContext } from "@/context/BuilderContext";
 import { loadTemplates } from "@/utils/templateUtils";
-import { Page } from "@/types/Element";
 
 export const LoadTemplate: React.FC = () => {
   const [templates, setTemplates] = useState<any[]>([]);

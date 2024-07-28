@@ -6,6 +6,7 @@ import { NavigationBar } from "../Navigation/NavigationBar";
 import { useRouter } from "next/router";
 import { Section } from "./Section";
 import { PreviewButton } from "./PreviewButton";
+import { ElementPropertiesPanel } from "./ElementPropertiesPanel";
 import { saveTemplate } from "@/utils/templateUtils";
 import Link from "next/link";
 
@@ -118,6 +119,10 @@ export const Builder: React.FC = () => {
           >
             Redo
           </button>
+        </div>
+
+        <div className="mt-8">
+          <ElementPropertiesPanel />
         </div>
       </div>
       <div className="main-content flex-grow p-4 overflow-y-auto">

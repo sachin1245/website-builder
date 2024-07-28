@@ -16,7 +16,7 @@ export const Section: React.FC<SectionProps> = ({ pageId, section }) => {
   const { addElement } = useBuilderContext();
 
   const handleAddElement = (type: "text" | "image" | "video" | "button") => {
-    const newElement = createNewElement(type) as Element;
+    const newElement = createNewElement(type, section.id) as Element;
     addElement(section.id, newElement);
   };
 

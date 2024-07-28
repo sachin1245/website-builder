@@ -1,7 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useElementDrag } from "@/hooks/useElementDrag";
 import { useBuilderContext } from "@/context/BuilderContext";
-import { StyleEditor } from "./StyleEditor";
 import { ResizableElement } from "./ResizableElement";
 
 interface VideoElementProps {
@@ -17,21 +16,23 @@ export const VideoElement: React.FC<VideoElementProps> = ({
   style,
   sectionId,
 }) => {
-  const { updateElement, deleteElement } = useBuilderContext();
-  const [isEditing, setIsEditing] = useState(false);
+  const { updateElement, deleteElement, setSelectedElement } =
+    useBuilderContext();
+
   const [showDelete, setShowDelete] = useState(false);
-  const [showStyleEditor, setShowStyleEditor] = useState(false);
 
   const { isDragging, drag } = useElementDrag("video", { id, type: "video" });
   const elementRef = useRef<HTMLDivElement>(null);
   drag(elementRef);
 
-  const handleUpdate = (updates: Partial<VideoElementProps>) => {
-    updateElement(sectionId, { id, type: "video", src, style, ...updates });
-  };
-
   const handleResize = (newStyle: React.CSSProperties) => {
-    updateElement(sectionId, { id, type: "video", src, style: newStyle });
+    updateElement(sectionId, {
+      id,
+      type: "video",
+      src,
+      sectionId,
+      style: newStyle,
+    });
   };
 
   return (
@@ -50,30 +51,20 @@ export const VideoElement: React.FC<VideoElementProps> = ({
         onMouseEnter={() => setShowDelete(true)}
         onMouseLeave={() => setShowDelete(false)}
       >
-        {isEditing ? (
-          <div className="flex flex-col gap-2">
-            <input
-              type="text"
-              value={src}
-              onChange={(e) => handleUpdate({ src: e.target.value })}
-              placeholder="Video URL"
-              className="p-1 border border-gray-300 rounded"
-            />
-            <button
-              onClick={() => setIsEditing(false)}
-              className="bg-blue-500 text-white p-1 rounded hover:bg-blue-600"
-            >
-              Save
-            </button>
-          </div>
-        ) : (
-          <video
-            src={src}
-            controls
-            className="w-full h-full"
-            onDoubleClick={() => setIsEditing(true)}
-          />
-        )}
+        <video
+          src={src}
+          controls
+          className="w-full h-full"
+          onClick={() =>
+            setSelectedElement({
+              id,
+              src,
+              style,
+              sectionId,
+              type: "video",
+            })
+          }
+        />
         {showDelete && (
           <div className="absolute -top-8 right-2 flex gap-2">
             <button

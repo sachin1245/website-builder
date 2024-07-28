@@ -2,6 +2,7 @@ export interface BaseElement {
   id: string;
   type: "text" | "image" | "video" | "button";
   style: React.CSSProperties;
+  sectionId: string;
 }
 
 export interface TextElement extends BaseElement {

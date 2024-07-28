@@ -19,6 +19,8 @@ interface BuilderContextType {
     position: { left: number; top: number }
   ) => void;
   deleteElement: (sectionId: string, elementId: string) => void;
+  selectedElement: Element | null;
+  setSelectedElement: (element: Element | null) => void;
   saveTemplate: (page: Page) => void;
   loadTemplate: (templateId: string) => void;
   getCurrentPageElements: () => Element[];
@@ -37,6 +39,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
   const [currentPageId, setCurrentPageId] = useState("");
   const [history, setHistory] = useState<Page[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [selectedElement, setSelectedElement] = useState<Element | null>(null);
 
   useEffect(() => {
     const savedState = localStorage.getItem("builderState");
@@ -180,6 +183,12 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         : page
     );
+
+    // If the updated element is the currently selected element, update it in the state
+    setSelectedElement((prev) =>
+      prev && prev.id === updatedElement.id ? updatedElement : prev
+    );
+
     setPages(newPages);
     addToHistory(newPages);
   };
@@ -282,6 +291,8 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
         updateElement,
         moveElement,
         deleteElement,
+        selectedElement,
+        setSelectedElement,
         saveTemplate,
         loadTemplate,
         getCurrentPageElements,

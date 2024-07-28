@@ -2,10 +2,12 @@ import { v4 as uuidv4 } from "uuid";
 
 export const createNewElement = (
   type: "text" | "image" | "video" | "button",
+  sectionId: string,
   props = {}
 ) => {
   const baseElement = {
     id: uuidv4(),
+    sectionId,
     type,
     style: {
       left: `${Math.floor(Math.random() * 80)}%`,
