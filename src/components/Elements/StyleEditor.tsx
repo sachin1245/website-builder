@@ -79,6 +79,47 @@ export const StyleEditor: React.FC<StyleEditorProps> = ({
           />
         </div>
       </div>
+
+      {/* Animation Properties */}
+      <div>
+        <label className="block text-sm font-medium">Animation</label>
+        <select
+          value={(style.animation as string) || "none"}
+          onChange={(e) => handleChange("animation", e.target.value)}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+        >
+          <option value="none">None</option>
+          <option value="fadeIn 1s">Fade In</option>
+          <option value="slideIn 1s">Slide In</option>
+          <option value="bounce 1s">Bounce</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium">
+          Animation Duration (s)
+        </label>
+        <input
+          type="number"
+          value={parseFloat(style.animationDuration as string) || 0}
+          onChange={(e) =>
+            handleChange("animationDuration", `${e.target.value}s`)
+          }
+          step="0.5"
+          min="0"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Animation Delay (s)</label>
+        <input
+          type="number"
+          value={parseFloat(style.animationDelay as string) || 0}
+          onChange={(e) => handleChange("animationDelay", `${e.target.value}s`)}
+          step="0.1"
+          min="0"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+        />
+      </div>
     </div>
   );
 };

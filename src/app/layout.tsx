@@ -1,6 +1,7 @@
 import React from "react";
 import { BuilderProvider } from "@/context/BuilderContext";
 import "./globals.css";
+import "./animation.css";
 
 export const metadata = {
   title: "Website Builder",

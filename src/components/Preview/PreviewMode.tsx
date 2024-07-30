@@ -1,4 +1,3 @@
-// src/components/PreviewMode.tsx
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useBuilderContext } from "@/context/BuilderContext";
@@ -89,39 +88,22 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
       height: "100%",
     };
 
+    // Common props for all element types
+    const commonProps = {
+      key: element.id,
+      className: "preview-element",
+      style: styles,
+    };
+
     switch (element.type) {
       case "text":
-        return (
-          <p key={element.id} className="preview-element" style={styles}>
-            {element.content}
-          </p>
-        );
+        return <p {...commonProps}>{element.content}</p>;
       case "image":
-        return (
-          <img
-            key={element.id}
-            src={element.src}
-            alt={element.alt}
-            className="preview-element"
-            style={styles}
-          />
-        );
+        return <img {...commonProps} src={element.src} alt={element.alt} />;
       case "video":
-        return (
-          <video
-            key={element.id}
-            src={element.src}
-            controls
-            className="preview-element"
-            style={styles}
-          />
-        );
+        return <video {...commonProps} src={element.src} controls />;
       case "button":
-        return (
-          <button key={element.id} className="preview-element" style={styles}>
-            {element.content}
-          </button>
-        );
+        return <button {...commonProps}>{element.content}</button>;
       default:
         return null;
     }
