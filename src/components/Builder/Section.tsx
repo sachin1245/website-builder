@@ -18,8 +18,8 @@ export const Section: React.FC<SectionProps> = ({ pageId, section }) => {
   // Merge current theme with global styles
   const appliedTheme = {
     ...currentTheme,
-    colors: { ...currentTheme.colors, ...globalStyles.colors },
-    fonts: { ...currentTheme.fonts, ...globalStyles.fonts },
+    colors: { ...currentTheme?.colors, ...globalStyles.colors },
+    fonts: { ...currentTheme?.fonts, ...globalStyles.fonts },
   };
 
   const handleAddElement = (type: "text" | "image" | "video" | "button") => {

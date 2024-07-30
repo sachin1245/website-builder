@@ -20,11 +20,11 @@ export const TextElement: React.FC<TextElementProps> = ({
 
   // Merge current theme with global styles and element-specific styles
   const appliedStyle = {
-    ...currentTheme.colors,
+    ...currentTheme?.colors,
     ...globalStyles.colors,
     ...style,
     fontFamily:
-      style.fontFamily || globalStyles.fonts?.body || currentTheme.fonts.body,
+      style.fontFamily || globalStyles.fonts?.body || currentTheme?.fonts.body,
   };
 
   const [showDelete, setShowDelete] = useState(false);

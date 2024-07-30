@@ -3,8 +3,15 @@ import { useBuilderContext } from "@/context/BuilderContext";
 import { FaPlus, FaEdit } from "react-icons/fa";
 
 export const Sidebar: React.FC = () => {
-  const { pages, currentPageId, addPage, setCurrentPage, updatePages } =
-    useBuilderContext();
+  const {
+    pages,
+    currentPageId,
+    addPage,
+    setCurrentPage,
+    updatePages,
+    currentTheme,
+    globalStyles,
+  } = useBuilderContext();
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [editedPageName, setEditedPageName] = useState("");
 
@@ -13,6 +20,13 @@ export const Sidebar: React.FC = () => {
       handleAddPage();
     }
   }, []);
+
+  // Merge current theme with global styles
+  const appliedTheme = {
+    ...currentTheme,
+    colors: { ...currentTheme?.colors, ...globalStyles.colors },
+    fonts: { ...currentTheme?.fonts, ...globalStyles.fonts },
+  };
 
   const handleAddPage = () => {
     const newPageName = `New Page ${pages.length + 1}`;
@@ -43,7 +57,15 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className="sidebar w-64 bg-indigo-900 text-white p-4 overflow-y-auto flex flex-col h-full">
+    <div
+      className="sidebar w-64 bg-indigo-900 text-white p-4 overflow-y-auto flex flex-col h-full"
+      style={{
+        backgroundColor: appliedTheme.colors.background,
+        color: appliedTheme.colors.text,
+        fontFamily: appliedTheme.fonts.body,
+        borderRight: `1px solid ${appliedTheme.colors.border || "#e2e8f0"}`,
+      }}
+    >
       <button
         onClick={handleAddPage}
         className="mb-6 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors flex items-center justify-center"

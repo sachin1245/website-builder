@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { addOrUpdatePage, removePage } from "@/utils/pageUtils";
 import { Element, Page, Section } from "@/types/Element";
 import { v4 as uuidv4 } from "uuid";
-import { Theme, lightTheme, themes } from "../styles/themes";
+import { Theme, lightTheme, darkTheme, themes } from "../styles/themes";
 
 interface BuilderContextType {
   pages: Page[];
@@ -40,7 +40,7 @@ const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
 export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [currentTheme, setCurrentTheme] = useState<Theme>(lightTheme);
+  const [currentTheme, setCurrentTheme] = useState<Theme | undefined>();
   const [globalStyles, setGlobalStyles] = useState<Partial<Theme>>({});
 
   const updateGlobalStyles = (styles: Partial<Theme>) => {

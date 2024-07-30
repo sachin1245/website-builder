@@ -24,8 +24,8 @@ export const Builder: React.FC = () => {
   // Merge current theme with global styles
   const appliedTheme = {
     ...currentTheme,
-    colors: { ...currentTheme.colors, ...globalStyles.colors },
-    fonts: { ...currentTheme.fonts, ...globalStyles.fonts },
+    colors: { ...currentTheme?.colors, ...globalStyles.colors },
+    fonts: { ...currentTheme?.fonts, ...globalStyles.fonts },
   };
 
   const currentPage = pages.find((page) => page.id === currentPageId);
@@ -65,7 +65,7 @@ export const Builder: React.FC = () => {
             </div>
           </div>
           <div
-            className="w-full md:w-64 bg-gray-200 p-4 overflow-y-auto"
+            className="w-full md:w-64 bg-gray-400 p-4 overflow-y-auto"
             style={{
               color: appliedTheme.colors.text,
               backgroundColor: appliedTheme.colors.background,

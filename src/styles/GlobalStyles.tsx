@@ -35,7 +35,7 @@ export const GlobalStylesPanel: React.FC = () => {
       <div className="mb-4">
         <label className="block text-sm font-medium ">Theme</label>
         <select
-          value={currentTheme.name}
+          value={currentTheme?.name}
           onChange={(e) => handleThemeChange(e.target.value)}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
         >
@@ -53,7 +53,7 @@ export const GlobalStylesPanel: React.FC = () => {
           <input
             type="color"
             value={
-              globalStyles.colors?.background || currentTheme.colors.background
+              globalStyles.colors?.background || currentTheme?.colors.background
             }
             onChange={(e) =>
               handleStyleChange("colors", "background", e.target.value)
@@ -65,7 +65,7 @@ export const GlobalStylesPanel: React.FC = () => {
           <label className="block text-sm font-medium ">Text Color</label>
           <input
             type="color"
-            value={globalStyles.colors?.text || currentTheme.colors.text}
+            value={globalStyles.colors?.text || currentTheme?.colors.text}
             onChange={(e) =>
               handleStyleChange("colors", "text", e.target.value)
             }
@@ -76,7 +76,7 @@ export const GlobalStylesPanel: React.FC = () => {
           <label className="block text-sm font-medium">Primary Color</label>
           <input
             type="color"
-            value={globalStyles.colors?.primary || currentTheme.colors.primary}
+            value={globalStyles.colors?.primary || currentTheme?.colors.primary}
             onChange={(e) =>
               handleStyleChange("colors", "primary", e.target.value)
             }
@@ -86,7 +86,7 @@ export const GlobalStylesPanel: React.FC = () => {
         <div>
           <label className="block text-sm font-medium ">Body Font</label>
           <select
-            value={globalStyles.fonts?.body || currentTheme.fonts.body}
+            value={globalStyles.fonts?.body || currentTheme?.fonts.body}
             onChange={(e) => handleStyleChange("fonts", "body", e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
           >

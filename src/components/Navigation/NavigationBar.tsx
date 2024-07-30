@@ -6,8 +6,23 @@ import { PreviewButton } from "../Builder/PreviewButton";
 import { FaSave, FaFolderOpen, FaUndo, FaRedo } from "react-icons/fa";
 
 export const NavigationBar: React.FC = () => {
-  const { currentPageId, pages, undo, redo, canUndo, canRedo } =
-    useBuilderContext();
+  const {
+    currentPageId,
+    pages,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    currentTheme,
+    globalStyles,
+  } = useBuilderContext();
+
+  // Merge current theme with global styles
+  const appliedTheme = {
+    ...currentTheme,
+    colors: { ...currentTheme?.colors, ...globalStyles.colors },
+    fonts: { ...currentTheme?.fonts, ...globalStyles.fonts },
+  };
 
   const currentPage = pages.find((page) => page.id === currentPageId);
 
@@ -21,7 +36,15 @@ export const NavigationBar: React.FC = () => {
   };
 
   return (
-    <nav className="bg-gray-900 text-white p-4">
+    <nav
+      className="bg-gray-900 text-white p-4"
+      style={{
+        backgroundColor: appliedTheme.colors.background,
+        color: appliedTheme.colors.text,
+        fontFamily: appliedTheme.fonts.body,
+        borderBottom: `1px solid ${appliedTheme.colors.border || "#e2e8f0"}`,
+      }}
+    >
       <div className="container mx-auto flex justify-between items-center">
         <div className="text-xl font-bold">Website Builder</div>
         <div className="flex space-x-4">

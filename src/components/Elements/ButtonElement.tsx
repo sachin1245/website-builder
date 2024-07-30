@@ -25,11 +25,11 @@ export const ButtonElement: React.FC<ButtonElementProps> = ({
 
   // Merge current theme with global styles and element-specific styles
   const appliedStyle = {
-    ...currentTheme.colors,
+    ...currentTheme?.colors,
     ...globalStyles.colors,
     ...style,
     fontFamily:
-      style.fontFamily || globalStyles.fonts?.body || currentTheme.fonts.body,
+      style.fontFamily || globalStyles.fonts?.body || currentTheme?.fonts.body,
   };
 
   return (
