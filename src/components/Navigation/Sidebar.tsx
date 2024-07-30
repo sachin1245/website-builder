@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useBuilderContext } from "@/context/BuilderContext";
-import { FaPlus, FaEdit } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 
 export const Sidebar: React.FC = () => {
   const {
     pages,
     currentPageId,
     addPage,
+    deletePage,
     setCurrentPage,
     updatePages,
     currentTheme,
@@ -29,24 +30,15 @@ export const Sidebar: React.FC = () => {
   };
 
   const handleAddPage = () => {
-    const newPageName = `New Page ${pages.length + 1}`;
-    const newPage = addPage({
-      name: newPageName,
-      slug: `page-${Date.now()}`,
-      sections: [
-        {
-          id: crypto.randomUUID(),
-          elements: [],
-          background: {
-            type: "color",
-            value: "#ffffff",
-          },
-        },
-      ],
-    });
+    const newPage = addPage({ name: `Page ${pages.length + 1}` });
     setCurrentPage(newPage.id);
   };
 
+  const handleDeletePage = (pageId: string) => {
+    if (window.confirm("Are you sure you want to delete this page?")) {
+      deletePage(pageId);
+    }
+  };
   const startEditing = (pageId: string, pageName: string) => {
     setEditingPageId(pageId);
     setEditedPageName(pageName);
@@ -109,6 +101,13 @@ export const Sidebar: React.FC = () => {
                   className="text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <FaEdit />
+                </button>
+                <button
+                  className="text-red-500 hover:text-red-700 ml-1"
+                  onClick={() => handleDeletePage(page.id)}
+                  disabled={pages.length <= 1}
+                >
+                  <FaTrash />
                 </button>
               </div>
             )}

@@ -3,18 +3,25 @@ import React, {
   createContext,
   useContext,
   useState,
-  useEffect,
   useCallback,
+  useEffect,
+  useRef,
 } from "react";
-import { addOrUpdatePage, removePage } from "@/utils/pageUtils";
 import { Element, Page, Section } from "@/types/Element";
+import { Theme } from "../styles/themes";
 import { v4 as uuidv4 } from "uuid";
-import { Theme, lightTheme, darkTheme, themes } from "../styles/themes";
+
+import { usePages } from "@/hooks/usePages";
+import { useSections } from "@/hooks/useSections";
+import { useElements } from "@/hooks/useElements";
+import { useHistory } from "@/hooks/useHistory";
+import { useTheme } from "@/hooks/useTheme";
 
 interface BuilderContextType {
   pages: Page[];
   currentPageId: string;
   addPage: (pageData: Partial<Page>) => Page;
+  deletePage: (pageId: string) => void;
   setCurrentPage: (pageId: string) => void;
   updatePages: (pages: Page[]) => void;
   addSection: (pageId: string) => void;
@@ -33,9 +40,6 @@ interface BuilderContextType {
   deleteElement: (sectionId: string, elementId: string) => void;
   selectedElement: Element | null;
   setSelectedElement: (element: Element | null) => void;
-  saveTemplate: (page: Page) => void;
-  loadTemplate: (templateId: string) => void;
-  getCurrentPageElements: () => Element[];
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -52,300 +56,90 @@ const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
 export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [currentTheme, setCurrentTheme] = useState<Theme | undefined>();
-  const [globalStyles, setGlobalStyles] = useState<Partial<Theme>>({});
-
-  const updateGlobalStyles = (styles: Partial<Theme>) => {
-    setGlobalStyles({ ...globalStyles, ...styles });
-  };
-
+  // Manage pages state at this level
   const [pages, setPages] = useState<Page[]>([]);
-  const [currentPageId, setCurrentPageId] = useState("");
-  const [history, setHistory] = useState<Page[][]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [selectedElement, setSelectedElement] = useState<Element | null>(null);
+  const [currentPageId, setCurrentPageId] = useState<string>("");
+  const isInitialized = useRef(false);
 
-  // Initialize state from localStorage or create a default page
-  useEffect(() => {
-    const savedState = localStorage.getItem("builderState");
-    if (savedState) {
-      const { pages, currentPageId } = JSON.parse(savedState);
-      setPages(pages);
-      setCurrentPageId(currentPageId);
-      setHistory([pages]);
-      setHistoryIndex(0);
-    } else {
-      // Initialize with a default page if no saved state
-      const defaultPage: Page = {
-        id: uuidv4(),
-        name: "Home",
-        slug: "home",
-        sections: [
-          {
-            id: uuidv4(),
-            elements: [],
-            background: {
-              type: "color",
-              value: "#ffffff",
-            },
-          },
-        ],
-      };
-      setPages([defaultPage]);
-      setCurrentPageId(defaultPage.id);
-      setHistory([[defaultPage]]);
-      setHistoryIndex(0);
-    }
-  }, []);
-
-  // Persist state to localStorage on every change
-  useEffect(() => {
-    localStorage.setItem(
-      "builderState",
-      JSON.stringify({ pages, currentPageId })
-    );
-  }, [pages, currentPageId]);
-
-  // Add new state to history for undo/redo functionality
-  const addToHistory = (newPages: Page[]) => {
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(newPages);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-  };
-
-  // Undo: Move back in history
-  const undo = () => {
-    if (historyIndex > 0) {
-      setHistoryIndex(historyIndex - 1);
-      setPages(history[historyIndex - 1]);
-    }
-  };
-
-  // Redo: Move forward in history
-  const redo = () => {
-    if (historyIndex < history.length - 1) {
-      setHistoryIndex(historyIndex + 1);
-      setPages(history[historyIndex + 1]);
-    }
-  };
-
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < history.length - 1;
-
-  // Add a new page to the builder
-  const addPage = (pageData: Partial<Page>) => {
-    const newPage: Page = {
-      id: uuidv4(),
-      name: pageData.name || "New Page",
-      slug: pageData.slug || `page-${Date.now()}`,
-      sections: pageData.sections || [
-        {
-          id: uuidv4(),
-          elements: [],
-          background: {
-            type: "color",
-            value: "#ffffff",
-          },
-        },
-      ],
-    };
-
-    const slug = `${newPage.name
-      .toLowerCase()
-      .replace(/\s+/g, "-")}-${uuidv4()}`;
-    addOrUpdatePage(slug);
-
-    const newPages = [...pages, newPage];
-    setPages(newPages);
-    // setCurrentPageId(newPage.id);
-    addToHistory(newPages);
-    return newPage;
-  };
-
-  const setCurrentPage = (id: string) => {
-    setCurrentPageId(id);
-  };
-
-  const updatePages = (pages: Page[]) => {
-    setPages(pages);
-    addToHistory(pages);
-  };
-
-  // Add a new section to a specific page
-  const addSection = (pageId: string) => {
-    const newSection: Section = {
-      id: uuidv4(),
-      elements: [],
-      background: {
-        type: "color",
-        value: "#ffffff",
-      },
-    };
-
-    const newPages = pages.map((page) =>
-      page.id === pageId
-        ? {
-            ...page,
-            sections: [...page.sections, newSection],
-          }
-        : page
-    );
-    setPages(newPages);
-    addToHistory(newPages);
-  };
-
-  // Update a specific section within a page
-  const updateSection = useCallback(
-    (pageId: string, sectionId: string, updatedSection: Section) => {
-      setPages((prevPages) =>
-        prevPages.map((page) =>
-          page.id === pageId
-            ? {
-                ...page,
-                sections: page.sections.map((section) =>
-                  section.id === sectionId ? updatedSection : section
-                ),
-              }
-            : page
-        )
-      );
-    },
-    []
+  // Initialize history hook
+  const { addToHistory, undo, redo, canUndo, canRedo } = useHistory(
+    pages,
+    setPages
   );
 
-  // Add a new element to a specific section
-  const addElement = (sectionId: string, element: Element) => {
-    const newPages = pages.map((page) =>
-      page.id === currentPageId
-        ? {
-            ...page,
-            sections: page.sections.map((section) =>
-              section.id === sectionId
-                ? { ...section, elements: [...section.elements, element] }
-                : section
-            ),
-          }
-        : page
-    );
-    setPages(newPages);
-    addToHistory(newPages);
-  };
+  // Define updatePages function
+  const updatePages = useCallback(
+    (newPages: Page[]) => {
+      setPages(newPages);
+      addToHistory(newPages);
+    },
+    [addToHistory]
+  );
 
-  // Update an existing element within a section
-  const updateElement = (sectionId: string, updatedElement: Element) => {
-    const newPages = pages.map((page) =>
-      page.id === currentPageId
-        ? {
-            ...page,
-            sections: page.sections.map((section) =>
-              section.id === sectionId
-                ? {
-                    ...section,
-                    elements: section.elements.map((el) =>
-                      el.id === updatedElement.id ? updatedElement : el
-                    ),
-                  }
-                : section
-            ),
-          }
-        : page
-    );
-
-    // If the updated element is the currently selected element, update it in the state
-    setSelectedElement((prev) =>
-      prev && prev.id === updatedElement.id ? updatedElement : prev
-    );
-
-    setPages(newPages);
-    addToHistory(newPages);
-  };
-
-  const deleteElement = (sectionId: string, elementId: string) => {
-    const newPages = pages.map((page) =>
-      page.id === currentPageId
-        ? {
-            ...page,
-            sections: page.sections.map((section) =>
-              section.id === sectionId
-                ? {
-                    ...section,
-                    elements: section.elements.filter(
-                      (el) => el.id !== elementId
-                    ),
-                  }
-                : section
-            ),
-          }
-        : page
-    );
-    setPages(newPages);
-    addToHistory(newPages);
-  };
-
-  // Move an element to a new position within its section
-  const moveElement = (
-    sectionId: string,
-    elementId: string,
-    newPosition: { left: number; top: number }
-  ) => {
-    setPages(
-      pages.map((page) =>
-        page.id === currentPageId
-          ? {
-              ...page,
-              sections: page.sections.map((section) =>
-                section.id === sectionId
-                  ? {
-                      ...section,
-                      elements: section.elements.map((el) =>
-                        el.id === elementId
-                          ? {
-                              ...el,
-                              style: {
-                                ...el.style,
-                                left: `${newPosition.left.toFixed(2)}%`,
-                                top: `${newPosition.top.toFixed(2)}%`,
-                              },
-                            }
-                          : el
-                      ),
-                    }
-                  : section
-              ),
-            }
-          : page
-      )
-    );
-  };
-
-  const saveTemplate = (page: Page) => {
-    const templates = JSON.parse(localStorage.getItem("templates") || "[]");
-    const newTemplate = {
-      id: uuidv4(),
-      page: page,
-    };
-    localStorage.setItem(
-      "templates",
-      JSON.stringify([...templates, newTemplate])
-    );
-  };
-
-  const loadTemplate = (templateId: string) => {
-    const templates = JSON.parse(localStorage.getItem("templates") || "[]");
-    const template = templates.find((t: any) => t.id === templateId);
-    if (template) {
-      setPages(template.pages);
-      setCurrentPageId(template.pages[0].id);
+  // Effect to initialize state from localStorage or create default page
+  useEffect(() => {
+    if (!isInitialized.current) {
+      const savedState = localStorage.getItem("builderState");
+      if (savedState) {
+        const { pages: savedPages, currentPageId: savedCurrentPageId } =
+          JSON.parse(savedState);
+        setPages(savedPages);
+        setCurrentPageId(savedCurrentPageId);
+        addToHistory(savedPages);
+      } else {
+        const defaultPage: Page = {
+          id: uuidv4(),
+          name: "Home",
+          slug: "home",
+          sections: [
+            {
+              id: uuidv4(),
+              elements: [],
+              background: {
+                type: "color",
+                value: "#ffffff",
+              },
+            },
+          ],
+        };
+        setPages([defaultPage]);
+        setCurrentPageId(defaultPage.id);
+        addToHistory([defaultPage]);
+      }
+      isInitialized.current = true;
     }
-  };
+  }, [addToHistory]);
 
-  const getCurrentPageElements = () => {
-    const currentPage = pages.find((page) => page.id === currentPageId);
-    return currentPage
-      ? currentPage.sections.flatMap((section) => section.elements)
-      : [];
-  };
+  // Effect to save state to localStorage whenever it changes
+  useEffect(() => {
+    if (isInitialized.current) {
+      localStorage.setItem(
+        "builderState",
+        JSON.stringify({ pages, currentPageId })
+      );
+    }
+  }, [pages, currentPageId]);
+
+  // Initialize other hooks
+  const { addPage, deletePage } = usePages(
+    pages,
+    updatePages,
+    currentPageId,
+    setCurrentPageId
+  );
+
+  const { addSection, updateSection } = useSections(pages, updatePages);
+
+  const {
+    addElement,
+    updateElement,
+    moveElement,
+    deleteElement,
+    selectedElement,
+    setSelectedElement,
+  } = useElements(pages, updatePages);
+  const { currentTheme, setCurrentTheme, globalStyles, updateGlobalStyles } =
+    useTheme();
 
   return (
     <BuilderContext.Provider
@@ -353,7 +147,8 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
         pages,
         currentPageId,
         addPage,
-        setCurrentPage,
+        deletePage,
+        setCurrentPage: setCurrentPageId,
         updatePages,
         addSection,
         updateSection,
@@ -363,9 +158,6 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
         deleteElement,
         selectedElement,
         setSelectedElement,
-        saveTemplate,
-        loadTemplate,
-        getCurrentPageElements,
         undo,
         redo,
         canUndo,
