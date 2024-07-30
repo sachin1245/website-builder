@@ -31,7 +31,7 @@ export const createNewElement = (
     case "image":
       return {
         ...baseElement,
-        src: "https://via.placeholder.com/150",
+        src: "https://picsum.photos/seed/picsum/500",
         alt: "Placeholder image",
         style: {
           ...baseElement.style,
@@ -43,7 +43,7 @@ export const createNewElement = (
     case "video":
       return {
         ...baseElement,
-        src: "https://example.com/placeholder-video.mp4",
+        src: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
         style: {
           ...baseElement.style,
           width: "40%",
