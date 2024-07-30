@@ -1,8 +1,16 @@
+// src/components/PreviewMode.tsx
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useBuilderContext } from "@/context/BuilderContext";
-import { Element, Section } from "@/types/Element";
+import { Element } from "@/types/Element";
 import Link from "next/link";
+import {
+  calculateGridLayout,
+  calculateResponsiveLayout,
+  calculateGridArea,
+  GridLayout,
+} from "@/utils/gridCalculations";
+import "./PreviewMode.css";
 
 interface PreviewModeProps {
   slug: string;
@@ -13,95 +21,64 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
   const [deviceType, setDeviceType] = useState<"mobile" | "tablet" | "desktop">(
     "desktop"
   );
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [gridLayouts, setGridLayouts] = useState<{ [key: string]: GridLayout }>(
+    {}
+  );
   const containerRef = useRef<HTMLDivElement>(null);
 
   const currentPage = pages.find((page) => page.slug === slug);
 
-  // Update container size on mount and on window resize
   useEffect(() => {
-    const updateContainerSize = () => {
-      if (containerRef.current) {
-        setContainerSize({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight,
-        });
-      }
-    };
-    updateContainerSize();
-    window.addEventListener("resize", updateContainerSize);
-    return () => window.removeEventListener("resize", updateContainerSize);
-  }, []);
-
-  if (!currentPage) return <div>Page not found</div>;
-
-  // Extract unique positions from the element styles for columns and rows
-  const extractUniquePositions = (
-    elements: Element[],
-    dimension: "left" | "top" | "width" | "height"
-  ) => {
-    const positions = new Set<number>();
-    positions.add(0); // Add 0 to account for the container's edge
-    elements.forEach((element) => {
-      const start = parseFloat(element.style[dimension] as string);
-      const size = parseFloat(
-        element.style[dimension === "left" ? "width" : "height"] as string
+    if (currentPage) {
+      const elements = currentPage.sections.flatMap(
+        (section) => section.elements
       );
-      positions.add(start);
-      positions.add(start + size);
-    });
-    positions.add(100); // Add 100 to account for the container's edge
-    return Array.from(positions).sort((a, b) => a - b);
+      const desktopLayout = calculateGridLayout(elements);
+      const tabletLayout = calculateResponsiveLayout(elements, 768);
+      const mobileLayout = calculateResponsiveLayout(elements, 375);
+
+      setGridLayouts({
+        desktop: desktopLayout,
+        tablet: tabletLayout,
+        mobile: mobileLayout,
+      });
+
+      updateCSSVariables(desktopLayout, tabletLayout, mobileLayout);
+    }
+  }, [currentPage]);
+
+  const updateCSSVariables = (
+    desktop: GridLayout,
+    tablet: GridLayout,
+    mobile: GridLayout
+  ) => {
+    if (containerRef.current) {
+      containerRef.current.style.setProperty(
+        "--grid-columns-desktop",
+        desktop.columns
+      );
+      containerRef.current.style.setProperty(
+        "--grid-rows-desktop",
+        desktop.rows
+      );
+      containerRef.current.style.setProperty(
+        "--grid-columns-tablet",
+        tablet.columns
+      );
+      containerRef.current.style.setProperty("--grid-rows-tablet", tablet.rows);
+      containerRef.current.style.setProperty(
+        "--grid-columns-mobile",
+        mobile.columns
+      );
+      containerRef.current.style.setProperty("--grid-rows-mobile", mobile.rows);
+    }
   };
 
-  // Generate template values by calculating differences between consecutive positions
-  const generateTemplateValues = (positions: number[]) => {
-    return positions.slice(1).map((pos, index) => pos - positions[index]);
-  };
-
-  // Normalize template values so they add up to 100%
-  const normalizeValues = (values: number[]) => {
-    const sum = values.reduce((acc, val) => acc + val, 0);
-    return values.map((val) => (val / sum) * 100);
-  };
-
-  // Extract and normalize column positions
-  const columns = extractUniquePositions(
-    currentPage.sections.flatMap((section) => section.elements),
-    "left"
-  );
-  const columnTemplate = normalizeValues(generateTemplateValues(columns))
-    .map((val) => `${val}fr`)
-    .join(" ");
-
-  // Extract and normalize row positions
-  const rows = extractUniquePositions(
-    currentPage.sections.flatMap((section) => section.elements),
-    "top"
-  );
-  const rowTemplate = normalizeValues(generateTemplateValues(rows))
-    .map((val) => `${val}fr`)
-    .join(" ");
-
-  // Calculate grid area for each element
-  const calculateGridArea = (element: Element) => {
-    const left = parseFloat(element.style.left as string);
-    const top = parseFloat(element.style.top as string);
-    const width = parseFloat(element.style.width as string);
-    const height = parseFloat(element.style.height as string);
-
-    const columnStart = columns.findIndex((col) => col >= left) + 1;
-    const columnEnd = columns.findIndex((col) => col >= left + width) + 1;
-    const rowStart = rows.findIndex((row) => row >= top) + 1;
-    const rowEnd = rows.findIndex((row) => row >= top + height) + 1;
-
-    return `${rowStart} / ${columnStart} / ${rowEnd} / ${columnEnd}`;
-  };
-
-  // Render each element based on its type
   const renderElement = (element: Element) => {
-    const gridArea = calculateGridArea(element);
+    const layout = gridLayouts[deviceType];
+    if (!layout) return null;
 
+    const gridArea = calculateGridArea(element, layout);
     const styles = {
       ...element.style,
       gridArea,
@@ -110,9 +87,6 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
       top: undefined,
       width: "100%",
       height: "100%",
-      maxWidth: "100%",
-      maxHeight: "100%",
-      overflow: "hidden",
     };
 
     switch (element.type) {
@@ -153,7 +127,6 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     }
   };
 
-  // Define container styles based on device type
   const containerStyle = {
     width:
       deviceType === "mobile"
@@ -166,6 +139,9 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     overflow: "auto",
     border: deviceType !== "desktop" ? "1px solid #ccc" : "none",
   };
+
+  if (!currentPage) return <div>Page not found</div>;
+  console.log(gridLayouts);
 
   return (
     <div className="preview-mode">
@@ -202,18 +178,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
         className="preview-container"
         style={containerStyle}
       >
-        <div
-          className="preview-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: columnTemplate,
-            gridTemplateRows: rowTemplate,
-            gap: "0",
-            padding: "20px",
-            height: "100%", // Ensure the grid takes full height
-            width: "100%", // Ensure the grid takes full width
-          }}
-        >
+        <div className="preview-grid">
           {currentPage.sections.flatMap((section) =>
             section.elements.map(renderElement)
           )}

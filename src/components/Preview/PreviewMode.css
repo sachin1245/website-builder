@@ -1,0 +1,77 @@
+:root {
+  --mobile-breakpoint: 375px;
+  --tablet-breakpoint: 768px;
+  --desktop-breakpoint: 1024px;
+  --container-padding: 20px;
+  --grid-columns-desktop: none;
+  --grid-rows-desktop: none;
+  --grid-columns-tablet: none;
+  --grid-rows-tablet: none;
+  --grid-columns-mobile: none;
+  --grid-rows-mobile: none;
+}
+
+.preview-mode {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.preview-container {
+  width: 100%;
+  height: calc(100vh - 60px);
+  overflow: auto;
+}
+
+.preview-grid {
+  display: grid;
+  gap: 0;
+  padding: var(--container-padding);
+  height: 100%;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .preview-grid {
+    grid-template-columns: var(--grid-columns-desktop);
+    grid-template-rows: var(--grid-rows-desktop);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .preview-grid {
+    grid-template-columns: var(--grid-columns-tablet);
+    grid-template-rows: var(--grid-rows-tablet);
+  }
+}
+
+@media (max-width: 767px) {
+  .preview-grid {
+    grid-template-columns: var(--grid-columns-mobile);
+    grid-template-rows: var(--grid-rows-mobile);
+  }
+}
+
+.preview-element {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+:root {
+  --grid-columns-desktop: 1fr;
+  --grid-rows-desktop: 1fr;
+  --grid-columns-tablet: 1fr;
+  --grid-rows-tablet: 1fr;
+  --grid-columns-mobile: 1fr;
+  --grid-rows-mobile: 1fr;
+}
+
+.preview-container {
+  position: relative;
+}
+
+.preview-element {
+  box-sizing: border-box;
+}
