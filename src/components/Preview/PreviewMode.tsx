@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useBuilderContext } from "@/context/BuilderContext";
-import { Element } from "@/types/Element";
+import { Element, Section } from "@/types/Element";
 import Link from "next/link";
 import {
   calculateGridLayout,
@@ -20,29 +20,33 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
   const [deviceType, setDeviceType] = useState<"mobile" | "tablet" | "desktop">(
     "desktop"
   );
-  const [gridLayouts, setGridLayouts] = useState<{ [key: string]: GridLayout }>(
-    {}
-  );
+  const [sectionLayouts, setSectionLayouts] = useState<{
+    [key: string]: { [key: string]: GridLayout };
+  }>({});
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   const currentPage = pages.find((page) => page.slug === slug);
 
   useEffect(() => {
     if (currentPage) {
-      const elements = currentPage.sections.flatMap(
-        (section) => section.elements
-      );
-      const desktopLayout = calculateGridLayout(elements);
-      const tabletLayout = calculateResponsiveLayout(elements, 768);
-      const mobileLayout = calculateResponsiveLayout(elements, 375);
+      const newSectionLayouts: {
+        [key: string]: { [key: string]: GridLayout };
+      } = {};
 
-      setGridLayouts({
-        desktop: desktopLayout,
-        tablet: tabletLayout,
-        mobile: mobileLayout,
+      currentPage.sections.forEach((section) => {
+        const desktopLayout = calculateGridLayout(section.elements);
+        const tabletLayout = calculateResponsiveLayout(section.elements, 768);
+        const mobileLayout = calculateResponsiveLayout(section.elements, 375);
+
+        newSectionLayouts[section.id] = {
+          desktop: desktopLayout,
+          tablet: tabletLayout,
+          mobile: mobileLayout,
+        };
       });
 
-      updateCSSVariables(desktopLayout, tabletLayout, mobileLayout);
+      setSectionLayouts(newSectionLayouts);
     }
   }, [currentPage]);
 
@@ -73,8 +77,40 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     }
   };
 
-  const renderElement = (element: Element) => {
-    const layout = gridLayouts[deviceType];
+  const renderSection = (section: Section) => {
+    const sectionStyle: React.CSSProperties = {
+      ...(section.background.type === "color"
+        ? { backgroundColor: section.background.value }
+        : {
+            backgroundImage: `url(${section.background.value})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }),
+    };
+
+    const layout = sectionLayouts[section.id]?.[deviceType];
+
+    const gridStyle: React.CSSProperties = layout
+      ? {
+          display: "grid",
+          gridTemplateColumns: layout.columns,
+          gridTemplateRows: layout.rows,
+        }
+      : {};
+
+    return (
+      <div key={section.id} className="preview-section" style={sectionStyle}>
+        <div className="preview-grid" style={gridStyle}>
+          {section.elements.map((element) =>
+            renderElement(element, section.id)
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderElement = (element: Element, sectionId: string) => {
+    const layout = sectionLayouts[sectionId]?.[deviceType];
     if (!layout) return null;
 
     const gridArea = calculateGridArea(element, layout);
@@ -123,7 +159,6 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
   };
 
   if (!currentPage) return <div>Page not found</div>;
-  console.log(gridLayouts);
 
   return (
     <div className="preview-mode">
@@ -160,11 +195,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
         className="preview-container"
         style={containerStyle}
       >
-        <div className="preview-grid">
-          {currentPage.sections.flatMap((section) =>
-            section.elements.map(renderElement)
-          )}
-        </div>
+        {currentPage.sections.map(renderSection)}
       </div>
     </div>
   );

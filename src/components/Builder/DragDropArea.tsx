@@ -10,11 +10,13 @@ import { Element } from "@/types/Element";
 interface DragDropAreaProps {
   sectionId: string;
   elements: Element[];
+  style: React.CSSProperties;
 }
 
 export const DragDropArea: React.FC<DragDropAreaProps> = ({
   sectionId,
   elements,
+  style,
 }) => {
   const { moveElement } = useBuilderContext();
   const dropRef = useRef<HTMLDivElement>(null);
@@ -113,7 +115,7 @@ export const DragDropArea: React.FC<DragDropAreaProps> = ({
     <div
       ref={dropRef}
       className="relative drag-drop-area h-auto min-h-[400px] bg-gray-100 relative border border-gray-300 overflow-y-auto p-4"
-      style={{ minHeight: "600px" }}
+      style={{ ...style, minHeight: "600px" }}
     >
       {/* {elements.map(renderElement)} */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

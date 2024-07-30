@@ -31,6 +31,10 @@ export type Element = TextElement | ImageElement | VideoElement | ButtonElement;
 export interface Section {
   id: string;
   elements: Element[];
+  background: {
+    type: "color" | "image";
+    value: string;
+  };
 }
 
 export interface Page {

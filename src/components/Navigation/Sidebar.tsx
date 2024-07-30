@@ -37,6 +37,10 @@ export const Sidebar: React.FC = () => {
         {
           id: crypto.randomUUID(),
           elements: [],
+          background: {
+            type: "color",
+            value: "#ffffff",
+          },
         },
       ],
     });

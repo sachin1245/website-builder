@@ -1,5 +1,11 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { addOrUpdatePage, removePage } from "@/utils/pageUtils";
 import { Element, Page, Section } from "@/types/Element";
 import { v4 as uuidv4 } from "uuid";
@@ -12,6 +18,11 @@ interface BuilderContextType {
   setCurrentPage: (pageId: string) => void;
   updatePages: (pages: Page[]) => void;
   addSection: (pageId: string) => void;
+  updateSection: (
+    pageId: string,
+    sectionId: string,
+    updatedSection: Section
+  ) => void;
   addElement: (sectionId: string, element: Element) => void;
   updateElement: (sectionId: string, updatedElement: Element) => void;
   moveElement: (
@@ -29,7 +40,7 @@ interface BuilderContextType {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
-  currentTheme: Theme;
+  currentTheme: Theme | undefined;
   setCurrentTheme: (theme: Theme) => void;
   globalStyles: Partial<Theme>;
   updateGlobalStyles: (styles: Partial<Theme>) => void;
@@ -71,6 +82,10 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
           {
             id: uuidv4(),
             elements: [],
+            background: {
+              type: "color",
+              value: "#ffffff",
+            },
           },
         ],
       };
@@ -122,6 +137,10 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
         {
           id: uuidv4(),
           elements: [],
+          background: {
+            type: "color",
+            value: "#ffffff",
+          },
         },
       ],
     };
@@ -148,17 +167,44 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const addSection = (pageId: string) => {
+    const newSection: Section = {
+      id: uuidv4(),
+      elements: [],
+      background: {
+        type: "color",
+        value: "#ffffff",
+      },
+    };
+
     const newPages = pages.map((page) =>
       page.id === pageId
         ? {
             ...page,
-            sections: [...page.sections, { id: uuidv4(), elements: [] }],
+            sections: [...page.sections, newSection],
           }
         : page
     );
     setPages(newPages);
     addToHistory(newPages);
   };
+
+  const updateSection = useCallback(
+    (pageId: string, sectionId: string, updatedSection: Section) => {
+      setPages((prevPages) =>
+        prevPages.map((page) =>
+          page.id === pageId
+            ? {
+                ...page,
+                sections: page.sections.map((section) =>
+                  section.id === sectionId ? updatedSection : section
+                ),
+              }
+            : page
+        )
+      );
+    },
+    []
+  );
 
   const addElement = (sectionId: string, element: Element) => {
     const newPages = pages.map((page) =>
@@ -299,6 +345,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
         setCurrentPage,
         updatePages,
         addSection,
+        updateSection,
         addElement,
         updateElement,
         moveElement,
