@@ -46,6 +46,7 @@ interface BuilderContextType {
   updateGlobalStyles: (styles: Partial<Theme>) => void;
 }
 
+// Create a context with undefined as initial value
 const BuilderContext = createContext<BuilderContextType | undefined>(undefined);
 
 export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -64,6 +65,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedElement, setSelectedElement] = useState<Element | null>(null);
 
+  // Initialize state from localStorage or create a default page
   useEffect(() => {
     const savedState = localStorage.getItem("builderState");
     if (savedState) {
@@ -96,7 +98,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // Save state to localStorage whenever it changes
+  // Persist state to localStorage on every change
   useEffect(() => {
     localStorage.setItem(
       "builderState",
@@ -104,6 +106,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   }, [pages, currentPageId]);
 
+  // Add new state to history for undo/redo functionality
   const addToHistory = (newPages: Page[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newPages);
@@ -111,6 +114,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     setHistoryIndex(newHistory.length - 1);
   };
 
+  // Undo: Move back in history
   const undo = () => {
     if (historyIndex > 0) {
       setHistoryIndex(historyIndex - 1);
@@ -118,6 +122,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // Redo: Move forward in history
   const redo = () => {
     if (historyIndex < history.length - 1) {
       setHistoryIndex(historyIndex + 1);
@@ -128,6 +133,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
+  // Add a new page to the builder
   const addPage = (pageData: Partial<Page>) => {
     const newPage: Page = {
       id: uuidv4(),
@@ -166,6 +172,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     addToHistory(pages);
   };
 
+  // Add a new section to a specific page
   const addSection = (pageId: string) => {
     const newSection: Section = {
       id: uuidv4(),
@@ -188,6 +195,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     addToHistory(newPages);
   };
 
+  // Update a specific section within a page
   const updateSection = useCallback(
     (pageId: string, sectionId: string, updatedSection: Section) => {
       setPages((prevPages) =>
@@ -206,6 +214,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
+  // Add a new element to a specific section
   const addElement = (sectionId: string, element: Element) => {
     const newPages = pages.map((page) =>
       page.id === currentPageId
@@ -223,6 +232,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     addToHistory(newPages);
   };
 
+  // Update an existing element within a section
   const updateElement = (sectionId: string, updatedElement: Element) => {
     const newPages = pages.map((page) =>
       page.id === currentPageId
@@ -273,6 +283,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
     addToHistory(newPages);
   };
 
+  // Move an element to a new position within its section
   const moveElement = (
     sectionId: string,
     elementId: string,
@@ -370,6 +381,7 @@ export const BuilderProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
+// Custom hook to use the BuilderContext
 export const useBuilderContext = () => {
   const context = useContext(BuilderContext);
   if (!context) {

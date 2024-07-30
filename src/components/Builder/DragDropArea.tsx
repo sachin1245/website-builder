@@ -21,6 +21,7 @@ export const DragDropArea: React.FC<DragDropAreaProps> = ({
   const { moveElement } = useBuilderContext();
   const dropRef = useRef<HTMLDivElement>(null);
 
+  // Handle element drop, calculating new position
   const handleDrop = useCallback(
     (id: string, delta: { x: number; y: number }) => {
       const element = elements.find((el) => el.id === id);
@@ -54,6 +55,7 @@ export const DragDropArea: React.FC<DragDropAreaProps> = ({
     [elements, moveElement, sectionId]
   );
 
+  // Set up react-dnd drop functionality
   const [, drop] = useDrop(
     () => ({
       accept: ["text", "image", "video", "button"],
@@ -69,6 +71,7 @@ export const DragDropArea: React.FC<DragDropAreaProps> = ({
 
   drop(dropRef);
 
+  // Render individual elements based on their type
   const renderElement = (element: Element) => {
     const commonProps = {
       id: element.id,

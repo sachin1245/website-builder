@@ -25,6 +25,7 @@ export const createNewElement = (
           ...baseElement.style,
           width: "20%",
           height: "8%",
+          color: "#000",
         },
         ...props,
       };

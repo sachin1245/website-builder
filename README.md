@@ -1,36 +1,148 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Next.js Website Builder
 
-## Getting Started
+## Overview
 
-First, run the development server:
+This project is a sophisticated website builder application built with Next.js, React, and TypeScript. It offers a drag-and-drop interface for creating and customizing websites, with features like responsive design, theming, and real-time previews.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Features
+
+1. **Drag-and-Drop Interface**
+
+   - Intuitive element placement and manipulation
+   - Support for text, images, videos, and buttons
+
+2. **Responsive Design**
+
+   - Preview modes for desktop, tablet, and mobile
+   - Adaptive grid layout system
+
+3. **Theme Management**
+
+   - Global styling options
+   - Custom color schemes and typography
+
+4. **Multi-Page Support**
+
+   - Create and manage multiple pages within a project
+   - Dynamic routing and navigation
+
+5. **Real-time Preview**
+
+   - Live preview of website changes
+   - Device-specific previews
+
+6. **Advanced Element Properties**
+
+   - Detailed control over element styling and positioning
+   - Custom property panels for each element type
+
+7. **Template System**
+
+   - Save and load custom templates
+   - Pre-defined starter templates
+
+8. **Undo/Redo Functionality**
+
+   - Full history management for user actions
+
+9. **Section Management**
+
+   - Add and customize multiple sections per page
+   - Section-specific background controls
+
+10. **Performance Optimizations**
+
+    - Efficient state management with React Context
+    - Optimized rendering with React hooks
+
+11. **Extensible Architecture**
+    - Modular component structure for easy feature additions
+    - Clear separation of concerns in code organization
+
+## Project Structure
+
+```
+src/
+├── app/
+│ ├── layout.tsx
+│ ├── page.tsx
+│ └── preview/
+│ └── [slug]/
+│ └── page.tsx
+├── components/
+│ ├── Builder/
+│ ├── Elements/
+│ ├── LoadTemplate/
+│ ├── Navigation/
+│ └── Preview/
+├── context/
+├── hooks/
+├── styles/
+├── types/
+└── utils/
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- `app/`: Next.js 14.2.5 app directory structure
+- `components/`: Reusable React components
+- `context/`: React Context for state management
+- `hooks/`: Custom React hooks
+- `styles/`: Global styles and theme definitions
+- `types/`: TypeScript type definitions
+- `utils/`: Utility functions and helpers
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup and Running the Project
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+1. **Clone the repository**
 
-## Learn More
+   ```bash
+   git clone https://github.com/sachin1245/website-builder.git
+   cd website-builder
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+````
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Install dependencies**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+   ```bash
+   npm install
+   ```
 
-## Deploy on Vercel
+3. **Run the development server**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```bash
+   npm run dev
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+4. **Build for production**
+
+   ```bash
+   npm run build
+   ```
+
+5. **Start the production server**
+
+   ```bash
+   npm start
+   ```
+
+## Technologies Used
+
+- Next.js 14 (with App Router)
+- React 18
+- TypeScript
+- Tailwind CSS
+- React DnD (for drag-and-drop functionality)
+- UUID (for unique identifier generation)
+
+## Architecture Highlights
+
+- **State Management**: Utilizes React Context for global state, with optimized updates to prevent unnecessary re-renders.
+- **Component Design**: Implements a modular component structure, allowing for easy extension and maintenance.
+- **Custom Hooks**: Leverages custom hooks for shared logic, such as drag-and-drop functionality and element management.
+- **Responsive Design**: Employs a custom grid system and layout calculations for true responsive behavior.
+- **Type Safety**: Utilizes TypeScript throughout the project for enhanced code quality and developer experience.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+````

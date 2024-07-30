@@ -5,6 +5,7 @@ export interface GridLayout {
   rows: string;
 }
 
+// Extract unique positions from elements for grid calculation
 const extractUniquePositions = (
   elements: Element[],
   dimension: "left" | "top" | "width" | "height"
@@ -23,15 +24,18 @@ const extractUniquePositions = (
   return Array.from(positions).sort((a, b) => a - b);
 };
 
+// Generate template values for grid
 const generateTemplateValues = (positions: number[]) => {
   return positions.slice(1).map((pos, index) => pos - positions[index]);
 };
 
+// Normalize values to percentages
 const normalizeValues = (values: number[]) => {
   const sum = values.reduce((acc, val) => acc + val, 0);
   return values.map((val) => (val / sum) * 100);
 };
 
+// Calculate grid layout for desktop view
 export const calculateGridLayout = (elements: Element[]): GridLayout => {
   const columns = extractUniquePositions(elements, "left");
   const rows = extractUniquePositions(elements, "top");
@@ -47,6 +51,7 @@ export const calculateGridLayout = (elements: Element[]): GridLayout => {
   return { columns: columnTemplate, rows: rowTemplate };
 };
 
+// Calculate responsive layout for tablet and mobile views
 export const calculateResponsiveLayout = (
   elements: Element[],
   containerWidth: number
@@ -108,16 +113,17 @@ export const calculateResponsiveLayout = (
   return { columns: columnTemplate, rows: rowTemplate };
 };
 
+// Calculate grid area for an element
 const processRow = (
-  rowElements: ReturnType<typeof calculateResponsiveLayout>["pixelElements"],
+  rowElements: any,
   containerWidth: number,
   rows: number[],
   columns: number[]
 ) => {
   let currentX = 0;
-  rowElements.sort((a, b) => a.pixelLeft - b.pixelLeft);
+  rowElements.sort((a: any, b: any) => a.pixelLeft - b.pixelLeft);
 
-  rowElements.forEach((element) => {
+  rowElements.forEach((element: any) => {
     if (currentX + element.pixelWidth > containerWidth) {
       // Element doesn't fit, move to next "row" (but really just extending the current row)
       currentX = 0;
@@ -129,10 +135,11 @@ const processRow = (
   });
 
   // Add the height of this row
-  const rowHeight = Math.max(...rowElements.map((el) => el.pixelHeight));
+  const rowHeight = Math.max(...rowElements.map((el: any) => el.pixelHeight));
   rows.push(rows[rows.length - 1] + rowHeight);
 };
 
+//Calculate grid area for each element on a given layout
 export const calculateGridArea = (
   element: Element,
   layout: GridLayout

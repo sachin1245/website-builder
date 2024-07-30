@@ -28,6 +28,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
 
   const currentPage = pages.find((page) => page.slug === slug);
 
+  // Calculate grid layouts for different device types
   useEffect(() => {
     if (currentPage) {
       const newSectionLayouts: {
@@ -35,6 +36,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
       } = {};
 
       currentPage.sections.forEach((section) => {
+        // Calculate layouts for desktop, tablet, and mobile
         const desktopLayout = calculateGridLayout(section.elements);
         const tabletLayout = calculateResponsiveLayout(section.elements, 768);
         const mobileLayout = calculateResponsiveLayout(section.elements, 375);
@@ -50,6 +52,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     }
   }, [currentPage]);
 
+  // Update CSS variables for responsive grid layout
   const updateCSSVariables = (
     desktop: GridLayout,
     tablet: GridLayout,
@@ -77,6 +80,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     }
   };
 
+  // Render a section with its elements
   const renderSection = (section: Section) => {
     const sectionStyle: React.CSSProperties = {
       ...(section.background.type === "color"
@@ -109,6 +113,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     );
   };
 
+  // Render an individual element within a section
   const renderElement = (element: Element, sectionId: string) => {
     const layout = sectionLayouts[sectionId]?.[deviceType];
     if (!layout) return null;
