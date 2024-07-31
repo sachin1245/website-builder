@@ -103,12 +103,12 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
       : {};
 
     return (
-      <div key={section.id} className="preview-section" style={sectionStyle}>
-        <div className="preview-grid" style={gridStyle}>
-          {section.elements.map((element) =>
-            renderElement(element, section.id)
-          )}
-        </div>
+      <div
+        key={section.id}
+        className="preview-grid preview-section"
+        style={{ ...sectionStyle, ...gridStyle }}
+      >
+        {section.elements.map((element) => renderElement(element, section.id))}
       </div>
     );
   };
@@ -131,20 +131,36 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
 
     // Common props for all element types
     const commonProps = {
-      key: element.id,
       className: "preview-element",
       style: styles,
     };
 
     switch (element.type) {
       case "text":
-        return <p {...commonProps}>{element.content}</p>;
+        return (
+          <p key={element.id} {...commonProps}>
+            {element.content}
+          </p>
+        );
       case "image":
-        return <img {...commonProps} src={element.src} alt={element.alt} />;
+        return (
+          <img
+            key={element.id}
+            {...commonProps}
+            src={element.src}
+            alt={element.alt}
+          />
+        );
       case "video":
-        return <video {...commonProps} src={element.src} controls />;
+        return (
+          <video key={element.id} {...commonProps} src={element.src} controls />
+        );
       case "button":
-        return <button {...commonProps}>{element.content}</button>;
+        return (
+          <button key={element.id} {...commonProps}>
+            {element.content}
+          </button>
+        );
       default:
         return null;
     }
