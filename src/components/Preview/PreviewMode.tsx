@@ -1,15 +1,43 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useBuilderContext } from "@/context/BuilderContext";
-import { Element, Section } from "@/types/Element";
+import {
+  Element,
+  Section,
+  TextElement,
+  ImageElement,
+  VideoElement,
+  ButtonElement,
+} from "@/types/Element";
 import Link from "next/link";
 import {
   calculateGridLayout,
   calculateResponsiveLayout,
   calculateGridArea,
   GridLayout,
+  groupAndSortElements,
 } from "@/utils/gridCalculations";
 import "./PreviewMode.css";
+
+//used to
+type PixelStyle = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+type PixelElement = (
+  | TextElement
+  | ImageElement
+  | VideoElement
+  | ButtonElement
+) & {
+  pixelStyle: PixelStyle;
+};
+
+const BASE_WIDTH = 1440;
+const BASE_HEIGHT = 768;
 
 interface PreviewModeProps {
   slug: string;
@@ -23,23 +51,51 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
   const [sectionLayouts, setSectionLayouts] = useState<{
     [key: string]: { [key: string]: GridLayout };
   }>({});
+  const [pixelElements, setPixelElements] = useState<PixelElement[]>([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   const currentPage = pages.find((page) => page.slug === slug);
 
+  const convertToPixels = (value: string, baseDimension: number): number => {
+    const percentage = parseFloat(value);
+    return (percentage / 100) * baseDimension;
+  };
+
   // Calculate grid layouts for different device types
   useEffect(() => {
     if (currentPage) {
+      //convert % values to pixels so we can set max-width and max-height
+      const newPixelElements = currentPage.sections.flatMap((section) =>
+        section.elements.map((element) => ({
+          ...element,
+          pixelStyle: {
+            left: convertToPixels(element.style.left as string, BASE_WIDTH),
+            top: convertToPixels(element.style.top as string, BASE_HEIGHT),
+            width: convertToPixels(element.style.width as string, BASE_WIDTH),
+            height: convertToPixels(
+              element.style.height as string,
+              BASE_HEIGHT
+            ),
+          },
+        }))
+      );
+
+      setPixelElements(newPixelElements);
+
       const newSectionLayouts: {
         [key: string]: { [key: string]: GridLayout };
       } = {};
 
       currentPage.sections.forEach((section) => {
         // Calculate layouts for desktop, tablet, and mobile
-        const desktopLayout = calculateGridLayout(section.elements);
-        const tabletLayout = calculateResponsiveLayout(section.elements, 768);
-        const mobileLayout = calculateResponsiveLayout(section.elements, 375);
+        const sectionElements = newPixelElements.filter(
+          (el) => el.sectionId === section.id
+        );
+
+        const desktopLayout = calculateGridLayout(sectionElements);
+        const tabletLayout = calculateResponsiveLayout(sectionElements, 768);
+        const mobileLayout = calculateResponsiveLayout(sectionElements, 375);
 
         newSectionLayouts[section.id] = {
           desktop: desktopLayout,
@@ -102,36 +158,52 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
         }
       : {};
 
+    const sectionPixelElements = pixelElements.filter(
+      (element) => element.sectionId === section.id
+    );
+
+    const groupedElements = groupAndSortElements(sectionPixelElements);
+
     return (
       <div
         key={section.id}
         className="preview-grid preview-section"
         style={{ ...sectionStyle, ...gridStyle }}
       >
-        {section.elements.map((element) => renderElement(element, section.id))}
+        {deviceType === "desktop"
+          ? sectionPixelElements.map((element) =>
+              renderElement(element, section.id)
+            )
+          : groupedElements.map((group, groupIndex) => (
+              <div key={`group-${groupIndex}`} className="element-group">
+                {group.map((element) => renderElement(element, section.id))}
+              </div>
+            ))}
       </div>
     );
   };
 
   // Render an individual element within a section
-  const renderElement = (element: Element, sectionId: string) => {
+  const renderElement = (element: PixelElement, sectionId: string) => {
     const layout = sectionLayouts[sectionId]?.[deviceType];
     if (!layout) return null;
 
-    const gridArea = calculateGridArea(element, layout);
-    const styles = {
+    const gridArea = layout.areas[element.id] || "auto";
+    const styles: React.CSSProperties = {
       ...element.style,
       gridArea,
-      position: "relative" as const,
+      position: "relative",
       left: undefined,
       top: undefined,
       width: "100%",
-      height: "100%",
+      height: "auto",
+      maxWidth: `${element.pixelStyle.width}px`,
+      maxHeight: `${element.pixelStyle.height}px`,
     };
 
     // Common props for all element types
     const commonProps = {
-      className: "preview-element",
+      className: `preview-element preview-element-${element.type}`,
       style: styles,
     };
 
@@ -156,6 +228,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
           <video key={element.id} {...commonProps} src={element.src} controls />
         );
       case "button":
+        commonProps.className = `w-full p-2 h-full bg-blue-500 text-white rounded hover:bg-blue-600 ${commonProps.className}`;
         return (
           <button key={element.id} {...commonProps}>
             {element.content}
@@ -213,7 +286,7 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
       </div>
       <div
         ref={containerRef}
-        className="preview-container"
+        className={`preview-container preview-${deviceType}`}
         style={containerStyle}
       >
         {currentPage.sections.map(renderSection)}

@@ -1,21 +1,51 @@
-import { Element } from "@/types/Element";
+import { sortBy } from "lodash";
+import {
+  Element,
+  TextElement,
+  ImageElement,
+  VideoElement,
+  ButtonElement,
+} from "@/types/Element";
 
 export interface GridLayout {
   columns: string;
   rows: string;
+  areas: { [key: string]: string };
 }
 
-// Extract unique positions from elements for grid calculation
+type PixelStyle = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+type PixelElement = (
+  | TextElement
+  | ImageElement
+  | VideoElement
+  | ButtonElement
+) & {
+  pixelStyle: PixelStyle;
+};
+
+// Function to extract unique positions
 const extractUniquePositions = (
-  elements: Element[],
+  elements: PixelElement[],
   dimension: "left" | "top" | "width" | "height"
-) => {
+): number[] => {
   const positions = new Set<number>();
   positions.add(0);
   elements.forEach((element) => {
     const start = parseFloat(element.style[dimension] as string);
     const size = parseFloat(
-      element.style[dimension === "left" ? "width" : "height"] as string
+      element.style[
+        dimension === "left" || dimension === "top"
+          ? dimension === "left"
+            ? "width"
+            : "height"
+          : dimension
+      ] as string
     );
     positions.add(start);
     positions.add(start + size);
@@ -24,39 +54,46 @@ const extractUniquePositions = (
   return Array.from(positions).sort((a, b) => a - b);
 };
 
-// Generate template values for grid
-const generateTemplateValues = (positions: number[]) => {
-  return positions.slice(1).map((pos, index) => pos - positions[index]);
-};
-
-// Normalize values to percentages
-const normalizeValues = (values: number[]) => {
-  const sum = values.reduce((acc, val) => acc + val, 0);
-  return values.map((val) => (val / sum) * 100);
-};
-
 // Calculate grid layout for desktop view
-export const calculateGridLayout = (elements: Element[]): GridLayout => {
+export const calculateGridLayout = (elements: PixelElement[]): GridLayout => {
   const columns = extractUniquePositions(elements, "left");
   const rows = extractUniquePositions(elements, "top");
 
-  const columnTemplate = normalizeValues(generateTemplateValues(columns))
-    .map((val) => `${val}fr`)
+  const columnTemplate = columns
+    .slice(1)
+    .map((col, i) => `${col - columns[i]}fr`)
     .join(" ");
 
-  const rowTemplate = normalizeValues(generateTemplateValues(rows))
-    .map((val) => `${val}fr`)
+  const rowTemplate = rows
+    .slice(1)
+    .map((row, i) => `${row - rows[i]}fr`)
     .join(" ");
 
-  return { columns: columnTemplate, rows: rowTemplate };
+  const areas: { [key: string]: string } = {};
+  elements.forEach((element) => {
+    const left = parseFloat(element.style.left as string);
+    const top = parseFloat(element.style.top as string);
+    const width = parseFloat(element.style.width as string);
+    const height = parseFloat(element.style.height as string);
+
+    const columnStart = columns.findIndex((col) => col >= left) + 1;
+    const columnEnd = columns.findIndex((col) => col >= left + width) + 1;
+    const rowStart = rows.findIndex((row) => row >= top) + 1;
+    const rowEnd = rows.findIndex((row) => row >= top + height) + 1;
+
+    areas[
+      element.id
+    ] = `${rowStart} / ${columnStart} / ${rowEnd} / ${columnEnd}`;
+  });
+
+  return { columns: columnTemplate, rows: rowTemplate, areas };
 };
 
-// Calculate responsive layout for tablet and mobile views
 export const calculateResponsiveLayout = (
-  elements: Element[],
+  elements: PixelElement[],
   containerWidth: number
 ): GridLayout => {
-  // Convert percentage widths to actual pixels
+  // Convert percentage widths to actual pixels for width calculations
   const pixelElements = elements.map((el) => ({
     ...el,
     pixelLeft: (parseFloat(el.style.left as string) / 100) * containerWidth,
@@ -68,118 +105,105 @@ export const calculateResponsiveLayout = (
   // Sort elements by their top position
   pixelElements.sort((a, b) => a.pixelTop - b.pixelTop);
 
-  let rows: number[] = [0];
   let columns: number[] = [0];
-  let currentRowElements: typeof pixelElements = [];
-  let currentRowBottom = 0;
+  let rows: number[] = [0];
+  let areas: { [key: string]: string } = {};
+  let maxHeight = 0;
 
   pixelElements.forEach((element) => {
-    if (element.pixelTop >= currentRowBottom) {
-      // Process previous row
-      if (currentRowElements.length > 0) {
-        processRow(currentRowElements, containerWidth, rows, columns);
-      }
-      // Start new row
-      currentRowElements = [element];
-      currentRowBottom = element.pixelTop + element.pixelHeight;
+    // For smaller screens, we'll stack elements vertically
+    if (containerWidth <= 768) {
+      const rowStart = rows.length;
+      rows.push(rows[rows.length - 1] + element.pixelHeight);
+      areas[element.id] = `${rowStart} / 1 / ${rowStart + 1} / 2`;
     } else {
-      currentRowElements.push(element);
-      currentRowBottom = Math.max(
-        currentRowBottom,
-        element.pixelTop + element.pixelHeight
-      );
+      // For larger screens, maintain a layout similar to the desktop version
+      const columnStart =
+        columns.findIndex((col) => col >= element.pixelLeft) + 1;
+      const columnEnd =
+        columns.findIndex(
+          (col) => col >= element.pixelLeft + element.pixelWidth
+        ) + 1;
+      const rowStart = rows.findIndex((row) => row >= element.pixelTop) + 1;
+      const rowEnd =
+        rows.findIndex((row) => row >= element.pixelTop + element.pixelHeight) +
+        1;
+
+      if (!columns.includes(element.pixelLeft)) columns.push(element.pixelLeft);
+      if (!columns.includes(element.pixelLeft + element.pixelWidth))
+        columns.push(element.pixelLeft + element.pixelWidth);
+      if (!rows.includes(element.pixelTop)) rows.push(element.pixelTop);
+      if (!rows.includes(element.pixelTop + element.pixelHeight))
+        rows.push(element.pixelTop + element.pixelHeight);
+
+      areas[
+        element.id
+      ] = `${rowStart} / ${columnStart} / ${rowEnd} / ${columnEnd}`;
     }
+
+    maxHeight = Math.max(maxHeight, element.pixelTop + element.pixelHeight);
   });
 
-  // Process last row
-  if (currentRowElements.length > 0) {
-    processRow(currentRowElements, containerWidth, rows, columns);
-  }
+  // Ensure the last column extends to the container width and last row to maxHeight
+  if (columns[columns.length - 1] < containerWidth)
+    columns.push(containerWidth);
+  if (rows[rows.length - 1] < maxHeight) rows.push(maxHeight);
 
-  // Remove duplicates and sort
-  columns = Array.from(new Set(columns)).sort((a, b) => a - b);
-
-  // Generate template strings
-  const columnTemplate = columns
-    .slice(1)
-    .map((col, i) => `${((col - columns[i]) / containerWidth) * 100}fr`)
-    .join(" ");
+  // Convert pixel values to fractional units (fr)
+  const columnTemplate =
+    containerWidth <= 768
+      ? "1fr"
+      : columns
+          .slice(1)
+          .map((col, i) => `${((col - columns[i]) / containerWidth) * 100}fr`)
+          .join(" ");
 
   const rowTemplate = rows
     .slice(1)
-    .map((row, i) => `${row - rows[i]}fr`)
+    .map((row, i) => `${((row - rows[i]) / maxHeight) * 100}fr`)
     .join(" ");
 
-  return { columns: columnTemplate, rows: rowTemplate };
+  return { columns: columnTemplate, rows: rowTemplate, areas };
 };
 
-// Calculate grid area for an element
-const processRow = (
-  rowElements: any,
-  containerWidth: number,
-  rows: number[],
-  columns: number[]
-) => {
-  let currentX = 0;
-  rowElements.sort((a: any, b: any) => a.pixelLeft - b.pixelLeft);
-
-  rowElements.forEach((element: any) => {
-    if (currentX + element.pixelWidth > containerWidth) {
-      // Element doesn't fit, move to next "row" (but really just extending the current row)
-      currentX = 0;
-      rows.push(rows[rows.length - 1] + element.pixelHeight);
-    }
-    columns.push(currentX);
-    currentX += element.pixelWidth;
-    columns.push(currentX);
-  });
-
-  // Add the height of this row
-  const rowHeight = Math.max(...rowElements.map((el: any) => el.pixelHeight));
-  rows.push(rows[rows.length - 1] + rowHeight);
-};
-
-//Calculate grid area for each element on a given layout
+// Unified calculateGridArea function
 export const calculateGridArea = (
   element: Element,
   layout: GridLayout
 ): string => {
-  const left = parseFloat(element.style.left as string);
-  const top = parseFloat(element.style.top as string);
-  const width = parseFloat(element.style.width as string);
-  const height = parseFloat(element.style.height as string);
+  return layout.areas[element.id] || "auto";
+};
 
-  const columns = layout.columns.split(" ").map((fr) => parseFloat(fr));
-  const rows = layout.rows.split(" ").map((fr) => parseFloat(fr));
+export const groupAndSortElements = (
+  elements: PixelElement[]
+): PixelElement[][] => {
+  console.log("groupAndSortElements function called");
+  // Sort elements by top position first, then by left position
+  const sortedElements = sortBy(elements, [
+    "pixelStyle.top",
+    "pixelStyle.left",
+  ]);
 
-  const columnStart =
-    columns.findIndex((col, index) => {
-      const position = columns
-        .slice(0, index)
-        .reduce((sum, curr) => sum + curr, 0);
-      return position >= left;
-    }) + 1;
-  const columnEnd =
-    columns.findIndex((col, index) => {
-      const position = columns
-        .slice(0, index)
-        .reduce((sum, curr) => sum + curr, 0);
-      return position >= left + width;
-    }) + 1;
-  const rowStart =
-    rows.findIndex((row, index) => {
-      const position = rows
-        .slice(0, index)
-        .reduce((sum, curr) => sum + curr, 0);
-      return position >= top;
-    }) + 1;
-  const rowEnd =
-    rows.findIndex((row, index) => {
-      const position = rows
-        .slice(0, index)
-        .reduce((sum, curr) => sum + curr, 0);
-      return position >= top + height;
-    }) + 1;
+  const groups: PixelElement[][] = [];
+  let currentGroup: PixelElement[] = [];
+  let lastTop = -1;
 
-  return `${rowStart} / ${columnStart} / ${rowEnd} / ${columnEnd}`;
+  sortedElements.forEach((element: PixelElement) => {
+    if (Math.abs(element.pixelStyle.top - lastTop) > 50) {
+      // Threshold for new row
+      if (currentGroup.length > 0) {
+        groups.push(currentGroup);
+      }
+      currentGroup = [element];
+    } else {
+      currentGroup.push(element);
+    }
+    lastTop = element.pixelStyle.top;
+  });
+
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  return groups;
 };

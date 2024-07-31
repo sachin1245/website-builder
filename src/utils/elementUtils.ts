@@ -23,7 +23,7 @@ export const createNewElement = (
         content: "Add Text",
         style: {
           ...baseElement.style,
-          width: "20%",
+          width: "33%",
           height: "8%",
           color: "#000",
         },
@@ -60,6 +60,7 @@ export const createNewElement = (
           ...baseElement.style,
           width: "15%",
           height: "8%",
+          backgroundColor: "rgb(59 130 246)",
         },
         ...props,
       };
