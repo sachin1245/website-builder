@@ -43,11 +43,11 @@ export const Builder: React.FC = () => {
       <div className="flex flex-grow overflow-hidden">
         <Sidebar />
         <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
-          <div className="main-content flex-grow p-6 overflow-y-auto bg-gray-100">
-            <div className="w-full -mt-6 overflow-y-auto">
+          <div className="main-content relative flex-grow p-6 overflow-y-auto bg-gray-100">
+            <div className="w-full fixed z-10 -mt-6 overflow-y-auto">
               <ElementPropertiesPanel />
             </div>
-            <div className="max-w-6xl">
+            <div className="max-w-6xl mt-20">
               <div className="page-content space-y-6">
                 {currentPage?.sections.map((section) => (
                   <Section
