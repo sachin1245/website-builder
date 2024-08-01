@@ -1,5 +1,5 @@
 /* Animation Changes */
-@keyframes fadeIn {
+@keyframes fade {
   from {
     opacity: 0;
   }
@@ -8,7 +8,7 @@
   }
 }
 
-@keyframes slideIn {
+@keyframes slide {
   from {
     transform: translateY(20px);
     opacity: 0;
@@ -27,6 +27,16 @@
   50% {
     transform: translateY(-10px);
   }
+}
+
+.fade {
+  animation-name: fade;
+}
+.slide {
+  animation-name: slide;
+}
+.bounce {
+  animation-name: bounce;
 }
 
 .animate-fade-in {

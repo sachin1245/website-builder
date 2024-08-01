@@ -1,0 +1,19 @@
+.element-properties-panel {
+  position: sticky;
+  top: 64px; /* Adjust this value based on your navbar height */
+  z-index: 40;
+  width: 100%;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .element-properties-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    max-height: 50vh;
+  }
+}

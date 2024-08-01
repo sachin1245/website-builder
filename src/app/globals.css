@@ -31,3 +31,33 @@ body {
     text-wrap: balance;
   }
 }
+
+.element-properties-panel {
+  height: auto;
+  max-height: 50vh; /* Limit the height on mobile */
+  overflow-y: auto;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* @media (min-width: 768px) {
+  .builder {
+    padding-bottom: 0;
+    padding-right: 300px;
+  }
+
+  .element-properties-panel {
+    width: 300px;
+    right: 0;
+    left: auto;
+    height: calc(100vh - 64px); 
+    max-height: none;
+  }
+} */

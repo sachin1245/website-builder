@@ -1,125 +1,167 @@
 import React from "react";
+import { Element } from "@/types/Element";
+import {
+  FaPalette,
+  FaFont,
+  FaAlignLeft,
+  FaExpand,
+  FaCog,
+  FaPlay,
+} from "react-icons/fa";
+
+export const styleProperties: Record<
+  string,
+  Record<string, { icon: JSX.Element; label: string }>
+> = {
+  common: {
+    animation: { icon: <FaPlay />, label: "Animation" },
+    animationDuration: { icon: <FaPlay />, label: "Animation Duration" },
+    animationDelay: { icon: <FaPlay />, label: "Animation Delay" },
+  },
+  text: {
+    textAlign: { icon: <FaAlignLeft />, label: "Align" },
+    fontSize: { icon: <FaFont />, label: "Font Size" },
+    fontWeight: { icon: <FaFont />, label: "Font Weight" },
+    borderRadius: { icon: <FaCog />, label: "Border Radius" },
+    color: { icon: <FaPalette />, label: "Color" },
+    backgroundColor: { icon: <FaPalette />, label: "Bg Color" },
+  },
+  image: {
+    objectFit: { icon: <FaExpand />, label: "Object Fit" },
+  },
+  button: {
+    textAlign: { icon: <FaAlignLeft />, label: "Align" },
+    fontSize: { icon: <FaFont />, label: "Font Size" },
+    fontWeight: { icon: <FaFont />, label: "Font Weight" },
+    borderRadius: { icon: <FaCog />, label: "Border Radius" },
+    color: { icon: <FaPalette />, label: "Color" },
+    backgroundColor: { icon: <FaPalette />, label: "Bg Color" },
+  },
+};
+
+export const getStylePropertiesForType = (type: string) => {
+  return { ...styleProperties.common, ...(styleProperties[type] || {}) };
+};
 
 interface StyleEditorProps {
-  style: React.CSSProperties;
-  onStyleChange: (newStyle: React.CSSProperties) => void;
+  element: Element;
+  property: string;
+  onUpdate: (updates: Partial<Element>) => void;
 }
 
 export const StyleEditor: React.FC<StyleEditorProps> = ({
-  style,
-  onStyleChange,
+  element,
+  property,
+  onUpdate,
 }) => {
-  const handleChange = (property: string, value: string) => {
-    onStyleChange({ ...style, [property]: value });
+  const handleStyleChange = (value: string) => {
+    onUpdate({ style: { ...element.style, [property]: value } });
   };
 
-  return (
-    <div className="style-editor text-black p-2 bg-white-300 rounded">
-      <h3 className="font-bold mb-2">Style Properties</h3>
-      <div className="grid grid-cols-1 gap-2 z-10  min-w-[160px] overflow-y-auto">
-        <div>
-          <label className="block text-sm font-medium">Color</label>
-          <input
-            type="color"
-            value={(style.color as string) || "#000000"}
-            onChange={(e) => handleChange("color", e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium ">Background Color</label>
-          <input
-            type="color"
-            value={(style.backgroundColor as string) || "#ffffff"}
-            onChange={(e) => handleChange("backgroundColor", e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Font Size (px)</label>
-          <input
-            type="number"
-            value={parseInt(style.fontSize as string) || 16}
-            onChange={(e) => handleChange("fontSize", `${e.target.value}px`)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium ">Font Weight</label>
-          <select
-            value={(style.fontWeight as string) || "normal"}
-            onChange={(e) => handleChange("fontWeight", e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          >
-            <option value="normal">Normal</option>
-            <option value="bold">Bold</option>
-            <option value="lighter">Lighter</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium">
-            Border Radius (px)
-          </label>
-          <input
-            type="number"
-            value={parseInt(style.borderRadius as string) || 0}
-            onChange={(e) =>
-              handleChange("borderRadius", `${e.target.value}px`)
-            }
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Padding (px)</label>
-          <input
-            type="number"
-            value={parseInt(style.padding as string) || 0}
-            onChange={(e) => handleChange("padding", `${e.target.value}px`)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          />
-        </div>
-      </div>
-
-      {/* Animation Properties */}
-      <div>
-        <label className="block text-sm font-medium">Animation</label>
+  switch (property) {
+    case "color":
+    case "backgroundColor":
+      return (
+        <input
+          type="color"
+          value={element.style[property] || "#000000"}
+          onChange={(e) => handleStyleChange(e.target.value)}
+          className="w-full"
+        />
+      );
+    case "fontSize":
+    case "padding":
+    case "margin":
+    case "borderRadius":
+      return (
+        <input
+          type="text"
+          value={element.style[property] || ""}
+          onChange={(e) => handleStyleChange(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder={`Enter ${property} (e.g., 16px, 1rem, 5%)`}
+        />
+      );
+    case "fontWeight":
+      return (
         <select
-          value={(style.animation as string) || "none"}
-          onChange={(e) => handleChange("animation", e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+          value={element.style.fontWeight || "normal"}
+          onChange={(e) => handleStyleChange(e.target.value)}
+          className="w-full p-2 border rounded"
+        >
+          <option value="normal">Normal</option>
+          <option value="bold">Bold</option>
+          <option value="bolder">Bolder</option>
+          <option value="lighter">Lighter</option>
+        </select>
+      );
+    case "textAlign":
+      return (
+        <select
+          value={(element.style.textAlign as string) || "left"}
+          onChange={(e) => handleStyleChange(e.target.value)}
+          className="w-full p-2 border rounded"
+        >
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+          <option value="justify">Justify</option>
+        </select>
+      );
+    case "objectFit":
+      return (
+        <select
+          value={(element.style.objectFit as string) || "cover"}
+          onChange={(e) => handleStyleChange(e.target.value)}
+          className="w-full p-2 border rounded"
+        >
+          <option value="cover">Cover</option>
+          <option value="contain">Contain</option>
+          <option value="fill">Fill</option>
+          <option value="none">None</option>
+          <option value="scale-down">Scale Down</option>
+        </select>
+      );
+    case "animation":
+      return (
+        <select
+          value={(element.style.animation as string)?.split(" ")[0] || "none"}
+          onChange={(e) =>
+            handleStyleChange(
+              `${e.target.value} ${element.style.animationDuration || "1s"} ${
+                element.style.animationDelay || "0s"
+              }`
+            )
+          }
+          className="w-full p-2 border rounded"
         >
           <option value="none">None</option>
-          <option value="fadeIn 1s">Fade In</option>
-          <option value="slideIn 1s">Slide In</option>
-          <option value="bounce 1s">Bounce</option>
+          <option value="fade">Fade</option>
+          <option value="slide">Slide</option>
+          <option value="bounce">Bounce</option>
         </select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium">
-          Animation Duration (s)
-        </label>
+      );
+    case "animationDuration":
+      return (
         <input
-          type="number"
-          value={parseFloat(style.animationDuration as string) || 0}
-          onChange={(e) =>
-            handleChange("animationDuration", `${e.target.value}s`)
-          }
-          step="0.5"
-          min="0"
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+          type="text"
+          value={element.style[property] || ""}
+          onChange={(e) => handleStyleChange(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder={`Enter ${property} (e.g., 0.5s, 1s)`}
         />
-      </div>
-      <div>
-        <label className="block text-sm font-medium">Animation Delay (s)</label>
+      );
+    case "animationDelay":
+      return (
         <input
-          type="number"
-          value={parseFloat(style.animationDelay as string) || 0}
-          onChange={(e) => handleChange("animationDelay", `${e.target.value}s`)}
-          step="0.1"
-          min="0"
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+          type="text"
+          value={element.style[property] || ""}
+          onChange={(e) => handleStyleChange(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder={`Enter ${property} (e.g., 0.5s, 1s)`}
         />
-      </div>
-    </div>
-  );
+      );
+    default:
+      return null;
+  }
 };

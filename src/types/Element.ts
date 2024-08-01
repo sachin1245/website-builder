@@ -14,11 +14,15 @@ export interface ImageElement extends BaseElement {
   type: "image";
   src: string;
   alt: string;
+  objectFit?: string | undefined;
 }
 
 export interface VideoElement extends BaseElement {
   type: "video";
   src: string;
+  autoplay?: boolean;
+  loop?: boolean;
+  controls?: boolean;
 }
 
 export interface ButtonElement extends BaseElement {
