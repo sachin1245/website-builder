@@ -47,6 +47,12 @@ body {
   scrollbar-width: none;
 }
 
+@media (max-width: 768px) {
+  .sidebar {
+    top: 84px;
+  }
+}
+
 /* @media (min-width: 768px) {
   .builder {
     padding-bottom: 0;

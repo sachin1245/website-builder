@@ -37,7 +37,6 @@ export const Section: React.FC<SectionProps> = ({ pageId, section }) => {
       },
     });
   };
-  console.log(section);
 
   const sectionStyle: React.CSSProperties = {
     ...(section.background?.type === "color"

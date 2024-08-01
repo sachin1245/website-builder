@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import { isMobile } from "react-device-detect";
 import { useBuilderContext } from "@/context/BuilderContext";
 import {
   Element,
@@ -46,7 +47,7 @@ interface PreviewModeProps {
 export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
   const { pages } = useBuilderContext();
   const [deviceType, setDeviceType] = useState<"mobile" | "tablet" | "desktop">(
-    "desktop"
+    isMobile ? "mobile" : "desktop"
   );
   const [sectionLayouts, setSectionLayouts] = useState<{
     [key: string]: { [key: string]: GridLayout };
@@ -61,7 +62,6 @@ export const PreviewMode: React.FC<PreviewModeProps> = ({ slug }) => {
     const percentage = parseFloat(value);
     return (percentage / 100) * baseDimension;
   };
-
   // Calculate grid layouts for different device types
   useEffect(() => {
     if (currentPage) {
